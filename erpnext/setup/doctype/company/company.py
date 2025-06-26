@@ -162,6 +162,7 @@ class Company(NestedSet):
 		self.check_parent_changed()
 		self.set_chart_of_accounts()
 		self.validate_parent_company()
+		self.set_reporting_currency()
 		self.validate_pending_reposts(old_doc)
 
 	def validate_abbr(self):
