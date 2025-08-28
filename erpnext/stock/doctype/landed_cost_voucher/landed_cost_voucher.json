@@ -172,9 +172,28 @@
   {
    "fieldname": "section_break_5",
    "fieldtype": "Section Break",
+<<<<<<< HEAD
    "hide_border": 1,
    "show_days": 1,
    "show_seconds": 1
+=======
+   "hide_border": 1
+  },
+  {
+   "fieldname": "vendor_invoices",
+   "fieldtype": "Table",
+   "label": "Vendor Invoices",
+   "options": "Landed Cost Vendor Invoice"
+  },
+  {
+   "fieldname": "total_vendor_invoices_cost",
+   "fieldtype": "Currency",
+   "label": "Total Vendor Invoices Cost (Company Currency)",
+   "options": "Company:company:default_currency",
+   "no_copy": 1,
+   "print_hide": 1,
+   "read_only": 1
+>>>>>>> 1fbde7b8c6 (Merge pull request #49289 from anwarpatelnoori/stage)
   }
  ],
  "icon": "icon-usd",
