@@ -726,9 +726,32 @@ class Item(Document):
 		if self.item_defaults or not self.item_group:
 			return
 
+<<<<<<< HEAD
 		item_group = frappe.get_cached_doc("Item Group", self.item_group)
 		if item_group.item_group_defaults:
 			for item in item_group.item_group_defaults:
+=======
+		item_defaults = frappe.db.get_values(
+			"Item Default",
+			{
+				"parent": self.item_group,
+				"parenttype": "Item Group",
+			},
+			[
+				"company",
+				"default_warehouse",
+				"default_price_list",
+				"buying_cost_center",
+				"default_supplier",
+				"expense_account",
+				"selling_cost_center",
+				"income_account",
+			],
+			as_dict=1,
+		)
+		if item_defaults:
+			for item in item_defaults:
+>>>>>>> 9e58a56b5c (fix(item): avoid inheriting item defaults from identically named items (#49571))
 				self.append(
 					"item_defaults",
 					{
