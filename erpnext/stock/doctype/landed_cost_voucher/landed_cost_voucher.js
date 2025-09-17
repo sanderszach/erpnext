@@ -5,6 +5,7 @@ frappe.provide("erpnext.stock");
 
 erpnext.landed_cost_taxes_and_charges.setup_triggers("Landed Cost Voucher");
 erpnext.stock.LandedCostVoucher = class LandedCostVoucher extends erpnext.stock.StockController {
+<<<<<<< HEAD
 	setup() {
 		var me = this;
 		this.frm.fields_dict.purchase_receipts.grid.get_field("receipt_document").get_query = function (
@@ -34,6 +35,8 @@ erpnext.stock.LandedCostVoucher = class LandedCostVoucher extends erpnext.stock.
 		this.frm.add_fetch("receipt_document", "base_grand_total", "grand_total");
 	}
 
+=======
+>>>>>>> 244dce5098 (fix: Incorrect filters in Voucher Child Table of Land Cost Voucher DocType (#49500))
 	refresh() {
 		var help_content = `<br><br>
 			<table class="table table-bordered" style="background-color: var(--scrollbar-track-color);">
@@ -150,3 +153,83 @@ frappe.ui.form.on("Landed Cost Taxes and Charges", {
 		frm.events.set_base_amount(frm, cdt, cdn);
 	},
 });
+<<<<<<< HEAD
+=======
+
+frappe.ui.form.on("Landed Cost Voucher", {
+	setup(frm) {
+		frm.trigger("setup_queries");
+	},
+
+	setup_queries(frm) {
+		frm.set_query("receipt_document", "purchase_receipts", (doc, cdt, cdn) => {
+			var d = locals[cdt][cdn];
+			var filters = [
+				[d.receipt_document_type, "docstatus", "=", 1],
+				[d.receipt_document_type, "company", "=", frm.doc.company],
+			];
+
+			if (d.receipt_document_type === "Purchase Invoice") {
+				filters.push(["Purchase Invoice", "update_stock", "=", 1]);
+			} else if (d.receipt_document_type === "Stock Entry") {
+				filters.push(["Stock Entry", "purpose", "in", ["Manufacture", "Repack"]]);
+			}
+			return {
+				filters: filters,
+			};
+		});
+
+		frm.set_query("vendor_invoice", "vendor_invoices", (doc, cdt, cdn) => {
+			return {
+				query: "erpnext.stock.doctype.landed_cost_voucher.landed_cost_voucher.get_vendor_invoices",
+				filters: {
+					company: doc.company,
+				},
+			};
+		});
+	},
+});
+
+frappe.ui.form.on("Landed Cost Purchase Receipt", {
+	receipt_document(frm, cdt, cdn) {
+		var d = locals[cdt][cdn];
+		if (d.receipt_document) {
+			frappe.call({
+				method: "get_receipt_document_details",
+				doc: frm.doc,
+				args: {
+					receipt_document: d.receipt_document,
+					receipt_document_type: d.receipt_document_type,
+				},
+				callback: function (r) {
+					if (r.message) {
+						$.extend(d, r.message);
+						refresh_field("purchase_receipts");
+					}
+				},
+			});
+		}
+	},
+});
+
+frappe.ui.form.on("Landed Cost Vendor Invoice", {
+	vendor_invoice(frm, cdt, cdn) {
+		var d = locals[cdt][cdn];
+		if (d.vendor_invoice) {
+			frappe.call({
+				method: "get_vendor_invoice_amount",
+				doc: frm.doc,
+				args: {
+					vendor_invoice: d.vendor_invoice,
+				},
+				callback: function (r) {
+					if (r.message) {
+						$.extend(d, r.message);
+						refresh_field("vendor_invoices");
+					}
+				},
+			});
+		}
+	},
+});
+>>>>>>> 244dce5098 (fix: Incorrect filters in Voucher Child Table of Land Cost Voucher DocType (#49500))
