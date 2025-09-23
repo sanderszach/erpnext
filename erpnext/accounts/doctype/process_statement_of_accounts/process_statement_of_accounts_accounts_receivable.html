@@ -207,12 +207,221 @@
 			</tr>
 		</thead>
 		<tbody>
+<<<<<<< HEAD
 			{% for i in range(data|length) %}
 				<tr>
 				{% if(report.report_name == "Accounts Receivable" or report.report_name == "Accounts Payable") %}
 					{% if(data[i]["party"]) %}
 						<td>{{ frappe.format((data[i]["posting_date"]), 'Date') }}</td>
 						<td style="text-align: right">{{ data[i]["age"] }}</td>
+=======
+			<tr>
+				<td>{{ _("Total Outstanding") }}</td>
+				<td class="text-right">
+					{{ frappe.utils.flt(balance_row["age"], 2) }}
+				</td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(balance_row["range1"], currency=balance_row["currency"]) }}
+				</td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(balance_row["range2"], currency=balance_row["currency"]) }}
+				</td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(balance_row["range3"], currency=balance_row["currency"]) }}
+				</td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(balance_row["range4"], currency=balance_row["currency"]) }}
+				</td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(balance_row["range5"], currency=balance_row["currency"]) }}
+				</td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(frappe.utils.flt(balance_row["outstanding"]), currency=balance_row["currency"]) }}
+				</td>
+			</tr>
+				<td>{{ _("Future Payments") }}</td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td class="text-right">
+					{{ frappe.utils.fmt_money(frappe.utils.flt(balance_row["future_amount"]), currency=balance_row["currency"]) }}
+				</td>
+			<tr class="cvs-footer">
+				<th class="text-left">{{ _("Cheques Required") }}</th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th></th>
+				<th class="text-right">
+					{{ frappe.utils.fmt_money(frappe.utils.flt(balance_row["outstanding"] - balance_row["future_amount"]), currency=balance_row["currency"]) }}</th>
+			</tr>
+		</tbody>
+
+	</table>
+	{% endif %}
+{% endif %}
+<table class="table table-bordered">
+	<thead>
+		<tr>
+			{% if(report.report_name == "Accounts Receivable" or report.report_name == "Accounts Payable") %}
+				<th style="width: 10%">{{ _("Date") }}</th>
+				<th style="width: 4%">{{ _("Age (Days)") }}</th>
+
+				{% if(report.report_name == "Accounts Receivable" and filters.show_sales_person) %}
+					<th style="width: 14%">{{ _("Reference") }}</th>
+					<th style="width: 10%">{{ _("Sales Person") }}</th>
+				{% else %}
+					<th style="width: 24%">{{ _("Reference") }}</th>
+				{% endif %}
+				{% if not(filters.show_future_payments) and filters.show_remarks %}
+					<th style="width: 20%">
+					{% if (filters.customer or filters.supplier or filters.customer_name) %}
+						{{ _("Remarks") }}
+					{% else %}
+						{{ _("Party") }}
+					{% endif %}
+					</th>
+				{% endif %}
+				<th style="width: 10%; text-align: right">{{ _("Invoiced Amount") }}</th>
+				{% if not(filters.show_future_payments) %}
+					<th style="width: 10%; text-align: right">{{ _("Paid Amount") }}</th>
+					<th style="width: 10%; text-align: right">
+						{% if report.report_name == "Accounts Receivable" %}
+							{{ _("Credit Note") }}
+						{% else %}
+							{{ _("Debit Note") }}
+						{% endif %}
+					</th>
+				{% endif %}
+				<th style="width: 10%; text-align: right">{{ _("Outstanding Amount") }}</th>
+				{% if(filters.show_future_payments) %}
+					{% if(report.report_name == "Accounts Receivable") %}
+						<th style="width: 12%">{{ _("Customer LPO No.") }}</th>
+					{% endif %}
+					<th style="width: 10%">{{ _("Future Payment Ref") }}</th>
+					<th style="width: 10%">{{ _("Future Payment Amount") }}</th>
+					<th style="width: 10%">{{ _("Remaining Balance") }}</th>
+				{% endif %}
+			{% else %}
+				<th style="width: 40%">
+					{% if (filters.customer or filters.supplier or filters.customer_name) %}
+						{{ _("Remarks")}}
+					{% else %}
+						{{ _("Party") }}
+					{% endif %}
+				</th>
+				<th style="width: 15%">{{ _("Total Invoiced Amount") }}</th>
+				<th style="width: 15%">{{ _("Total Paid Amount") }}</th>
+				<th style="width: 15%">
+					{% if report.report_name == "Accounts Receivable Summary" %}
+						{{ _("Credit Note Amount") }}
+					{% else %}
+						{{ _("Debit Note Amount") }}
+					{% endif %}
+				</th>
+				<th style="width: 15%">{{ _("Total Outstanding Amount") }}</th>
+			{% endif %}
+		</tr>
+	</thead>
+	<tbody>
+		{% for i in range(data|length) %}
+			<tr>
+			{% if(report.report_name == "Accounts Receivable" or report.report_name == "Accounts Payable") %}
+				{% if(data[i]["party"]) %}
+					<td>{{ frappe.format(data[i]["posting_date"], 'Date') }}</td>
+					<td style="text-align: right">{{ data[i]["age"] }}</td>
+					<td>
+						{% if not(filters.show_future_payments) %}
+							{{ data[i]["voucher_type"] }}
+							<br>
+						{% endif %}
+						{{ data[i]["voucher_no"] }}
+					</td>
+
+					{% if(report.report_name == "Accounts Receivable" and filters.show_sales_person) %}
+					<td>{{ data[i]["sales_person"] }}</td>
+					{% endif %}
+
+					{% if not (filters.show_future_payments) and filters.show_remarks %}
+					<td>
+						{% if(not(filters.customer or filters.supplier or filters.customer_name)) %}
+							{{ data[i]["party"] }}
+							{% if(data[i]["customer_name"] and data[i]["customer_name"] != data[i]["party"]) %}
+								<br> {{ data[i]["customer_name"] }}
+							{% elif(data[i]["supplier_name"] != data[i]["party"]) %}
+								<br> {{ data[i]["supplier_name"] }}
+							{% endif %}
+						{% endif %}
+						<div>
+						{% if data[i]["remarks"] %}
+							{{ _("Remarks") }}:
+							{{ data[i]["remarks"] }}
+						{% endif %}
+						</div>
+					</td>
+					{% endif %}
+
+					<td style="text-align: right">
+						{{ frappe.utils.fmt_money(data[i]["invoiced"], currency=data[i]["currency"]) }}</td>
+
+					{% if not(filters.show_future_payments) %}
+						<td style="text-align: right">
+							{{ frappe.utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">
+							{{ frappe.utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }}</td>
+					{% endif %}
+					<td style="text-align: right">
+						{{ frappe.utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
+
+					{% if(filters.show_future_payments) %}
+						{% if(report.report_name == "Accounts Receivable") %}
+							<td style="text-align: right">
+								{{ data[i]["po_no"] }}</td>
+						{% endif %}
+						<td style="text-align: right">{{ data[i]["future_ref"] }}</td>
+						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["future_amount"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["remaining_balance"], currency=data[i]["currency"]) }}</td>
+					{% endif %}
+				{% else %}
+					<td></td>
+					{% if not(filters.show_future_payments) %}
+					<td></td>
+					{% endif %}
+					{% if(report.report_name == "Accounts Receivable" and filters.show_sales_person) %}
+					<td></td>
+					{% endif %}
+					<td></td>
+					<td style="text-align: right"><b>{{ _("Total") }}</b></td>
+					<td style="text-align: right">
+						{{ frappe.utils.fmt_money(data[i]["invoiced"], data[i]["currency"]) }}</td>
+
+					{% if not(filters.show_future_payments) %}
+						<td style="text-align: right">
+							{{ frappe.utils.fmt_money(data[i]["paid"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["credit_note"], currency=data[i]["currency"]) }} </td>
+					{% endif %}
+					<td style="text-align: right">
+						{{ frappe.utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
+
+					{% if(filters.show_future_payments) %}
+						{% if(report.report_name == "Accounts Receivable") %}
+							<td style="text-align: right">
+								{{ data[i]["po_no"] }}</td>
+						{% endif %}
+						<td style="text-align: right">{{ data[i]["future_ref"] }}</td>
+						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["future_amount"], currency=data[i]["currency"]) }}</td>
+						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["remaining_balance"], currency=data[i]["currency"]) }}</td>
+					{% endif %}
+				{% endif %}
+			{% else %}
+				{% if(data[i]["party"] or "&nbsp;") %}
+					{% if not(data[i]["is_total_row"]) %}
+>>>>>>> b98977dc75 (fix: remove remarks if show_remarks is unchecked (#49567))
 						<td>
 							{% if not(filters.show_future_payments) %}
 								{{ data[i]["voucher_type"] }}
@@ -320,11 +529,23 @@
 						<td style="text-align: right">{{ frappe.utils.fmt_money(data[i]["outstanding"], currency=data[i]["currency"]) }}</td>
 					{% endif %}
 				{% endif %}
+<<<<<<< HEAD
 				</tr>
 			{% endfor %}
 			<td></td>
 			<td></td>
 			<td></td>
+=======
+			{% endif %}
+			</tr>
+		{% endfor %}
+		<td></td>
+		<td></td>
+		{% if (filters.show_future_payments) or filters.show_remarks %}
+			<td></td>
+		{% endif %}
+		{% if not(filters.show_future_payments) %}
+>>>>>>> b98977dc75 (fix: remove remarks if show_remarks is unchecked (#49567))
 			<td></td>
 			<td style="text-align: right"><b>{{ frappe.utils.fmt_money(data|sum(attribute="invoiced"), currency=data[0]["currency"]) }}</b></td>
 			<td style="text-align: right"><b>{{ frappe.utils.fmt_money(data|sum(attribute="paid"), currency=data[0]["currency"]) }}</b></td>
