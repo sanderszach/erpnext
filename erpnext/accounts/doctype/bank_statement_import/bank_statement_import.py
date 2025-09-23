@@ -76,6 +76,18 @@ class BankStatementImport(DataImport):
 			self.validate_google_sheets_url()
 
 	def start_import(self):
+		"""
+		Start a background import job for this Bank Statement Import.
+		
+		Validates that the preview contains a "Bank Account" column and that the scheduler is active (unless running in test or developer mode). If validation passes and there is not already an enqueued job for this document, enqueue a background worker to perform the import.
+		
+		Returns:
+		    str | None: The enqueued job_id when a new job was queued, otherwise None.
+		
+		Raises:
+		    frappe.ValidationError: If the preview is missing a "Bank Account" column.
+		    frappe.ValidationError: If the scheduler is inactive and import is not allowed to run immediately.
+		"""
 		preview = frappe.get_doc("Bank Statement Import", self.name).get_preview_from_template(
 			self.import_file, self.google_sheets_url
 		)
@@ -111,20 +123,94 @@ class BankStatementImport(DataImport):
 		return None
 
 
+def preprocess_mt940_content(content: str) -> str:
+	"""
+	Truncate overly long MT940 statement numbers found in `:28C:` tags to the last 5 digits.
+	
+	This function fixes MT940 files where banks supply statement numbers longer than the MT940-expected maximum (5 digits),
+	which can break parsers. It only processes lines that start with the `:28C:` tag and:
+	- leaves content unchanged if no `:28C:` tag is present,
+	- truncates numeric statement numbers longer than 5 digits to their last 5 digits,
+	- preserves any `/sequence` suffix and trailing whitespace on the same line.
+	
+	Parameters:
+		content (str): Raw MT940 file content.
+	
+	Returns:
+		str: The processed content with corrected `:28C:` statement numbers.
+	"""
+	# Fast-path: bail if no :28C: tag exists
+	if ":28C:" not in content:
+		return content
+
+	# Match :28C: at start of line, capture digits and optional /seq, preserve whitespace
+	pattern = re.compile(r'(?m)^(:28C:)(\d{6,})(/\d+)?(\s*)$')
+
+	def replace_statement_number(match):
+		"""
+		Replace a matched MT940 :28C: statement number by truncating it to the last five digits if it is longer.
+		
+		Parameters:
+			match (re.Match): A regex match with groups:
+				1: prefix (e.g., ':28C:')
+				2: numeric statement number
+				3: optional sequence part (e.g., '/1')
+				4: optional trailing whitespace
+		
+		Returns:
+			str: Reconstructed replacement string preserving prefix, (possibly truncated) statement number, sequence part, and trailing whitespace.
+		"""
+		prefix = match.group(1)  # ':28C:'
+		statement_num = match.group(2)  # The statement number
+		sequence_part = match.group(3) or ''  # The sequence part like '/1'
+		trailing_space = match.group(4) or ''  # Preserve trailing whitespace
+
+		# If statement number is longer than 5 digits, truncate to last 5 digits
+		if len(statement_num) > 5:
+			statement_num = statement_num[-5:]
+
+		return prefix + statement_num + sequence_part + trailing_space
+
+	# Apply the replacement
+	processed_content = pattern.sub(replace_statement_number, content)
+	return processed_content
+
+
 @frappe.whitelist()
 def convert_mt940_to_csv(data_import, mt940_file_path):
+	"""
+	Convert an MT940 file to a CSV and save it to the Frappe File Manager, returning the saved file URL.
+	
+	This function:
+	- Loads the specified MT940 file, verifies it is MT940 format, preprocesses content to fix statement number formatting, and parses transactions.
+	- Writes parsed transactions to an in-memory CSV with headers: Date, Deposit, Withdrawal, Description, Reference Number, Bank Account, Currency.
+	- Saves the CSV as a private attachment on the Bank Statement Import document and returns the file URL.
+	
+	Parameters:
+		data_import (str): Name (docname) of the Bank Statement Import document to attach the converted CSV to.
+		mt940_file_path (str): File path or file identifier pointing to the uploaded MT940 file to convert.
+	
+	Returns:
+		str: URL of the saved CSV file in the File Manager.
+	
+	Raises:
+		frappe.ValidationError: If the file is not MT940, MT940 import is not enabled on the document, parsing fails, or no transactions are found.
+	"""
 	doc = frappe.get_doc("Bank Statement Import", data_import)
 
 	file_doc, content = get_file(mt940_file_path)
 
-	if not is_mt940_format(content):
+	is_mt940 = is_mt940_format(content)
+	if not is_mt940:
 		frappe.throw(_("The uploaded file does not appear to be in valid MT940 format."))
 
-	if is_mt940_format(content) and not doc.import_mt940_fromat:
+	if is_mt940 and not doc.import_mt940_fromat:
 		frappe.throw(_("MT940 file detected. Please enable 'Import MT940 Format' to proceed."))
 
 	try:
-		transactions = mt940.parse(content)
+		# Preprocess MT940 content to fix statement number format issues
+		processed_content = preprocess_mt940_content(content)
+		transactions = mt940.parse(processed_content)
 	except Exception as e:
 		frappe.throw(_("Failed to parse MT940 format. Error: {0}").format(str(e)))
 
@@ -249,6 +335,20 @@ def start_import(data_import, bank_account, import_file_path, google_sheets_url,
 
 
 def update_mapping_db(bank, template_options):
+	"""
+	Update a Bank document's transaction field mappings to match the provided template options.
+	
+	This replaces all existing entries in the Bank.bank_transaction_mapping child table with mappings from
+	the JSON-encoded template_options. The expected template_options JSON contains a "column_to_field_map"
+	object mapping file column names (keys) to bank transaction field names (values).
+	
+	Parameters:
+		bank (str | frappe.model.document.Document): Bank name/docname or a Bank document.
+		template_options (str): JSON string containing a "column_to_field_map" mapping of file column -> bank field.
+	
+	Side effects:
+		Overwrites the Bank.bank_transaction_mapping entries and saves the Bank document.
+	"""
 	bank = frappe.get_doc("Bank", bank)
 	for d in bank.bank_transaction_mapping:
 		d.delete()
@@ -260,6 +360,17 @@ def update_mapping_db(bank, template_options):
 
 
 def add_bank_account(data, bank_account):
+	"""
+	Ensure every data row contains the given bank account value.
+	
+	Assumes `data` is a list of rows where data[0] is the header row. If the header row does not contain "Bank Account",
+	this function appends that header and appends the `bank_account` value to each subsequent row. If the header exists,
+	it sets the `bank_account` value into the existing "Bank Account" column for every data row. Mutates `data` in place.
+	
+	Parameters:
+	    data (list[list]): Table-like data with the first row as headers.
+	    bank_account (str): Bank account value to set for each data row.
+	"""
 	bank_account_loc = None
 	if "Bank Account" not in data[0]:
 		data[0].append("Bank Account")
@@ -276,6 +387,21 @@ def add_bank_account(data, bank_account):
 
 
 def write_files(import_file, data):
+	"""
+	Write processed tabular data back to the original import file path (CSV or Excel).
+	
+	This function overwrites the file referenced by import_file.file_doc.get_full_path().
+	- If the file extension is "csv", writes rows using the csv writer (expects `data` as an iterable of row iterables).
+	- If the extension is "xlsx" or "xls", writes to an Excel workbook using write_xlsx with sheet name "trans".
+	
+	Parameters:
+	    import_file: object
+	        File wrapper whose `.file_doc.get_full_path()` and `.file_doc.get_extension()` are used to determine the target path and extension.
+	    data: Iterable[Iterable]
+	        Sequence of rows (each row is an iterable of cell values) to be written.
+	
+	No return value.
+	"""
 	full_file_path = import_file.file_doc.get_full_path()
 	parts = import_file.file_doc.get_extension()
 	extension = parts[1]
@@ -285,11 +411,26 @@ def write_files(import_file, data):
 		with open(full_file_path, "w", newline="") as file:
 			writer = csv.writer(file)
 			writer.writerows(data)
-	elif extension == "xlsx" or "xls":
+	elif extension in ("xlsx", "xls"):
 		write_xlsx(data, "trans", file_path=full_file_path)
 
 
 def write_xlsx(data, sheet_name, wb=None, column_widths=None, file_path=None):
+	"""
+	Write rows of data to an Excel worksheet and save the workbook.
+	
+	Creates a sheet named `sheet_name` in the provided openpyxl workbook (or a new write-only workbook if `wb` is None), applies optional column widths, converts HTML in string cells (except for sheets named "Data Import Template" or "Data Export"), strips characters illegal in Excel, and saves the workbook to `file_path`.
+	
+	Parameters:
+	    data (Iterable[Sequence]): Iterable of rows, where each row is a sequence of cell values.
+	    sheet_name (str): Name of the worksheet to create.
+	    wb (openpyxl.Workbook, optional): Workbook to append the sheet to. If not provided, a new write-only Workbook is created.
+	    column_widths (Sequence[Number], optional): Sequence of column widths; indexes correspond to columns starting at 1.
+	    file_path (str): File path where the workbook will be saved.
+	
+	Returns:
+	    bool: True on successful save.
+	"""
 	# from xlsx utils with changes
 	column_widths = column_widths or []
 	if wb is None:
