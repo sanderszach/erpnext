@@ -1097,6 +1097,7 @@ def get_pending_work_orders(doctype, txt, searchfield, start, page_length, filte
 
 
 @frappe.whitelist()
+<<<<<<< HEAD
 def target_document_exists(pick_list_name, purpose):
 	if purpose == "Delivery":
 		return frappe.db.exists("Delivery Note", {"pick_list": pick_list_name})
@@ -1107,6 +1108,10 @@ def target_document_exists(pick_list_name, purpose):
 @frappe.whitelist()
 def get_item_details(item_code, uom=None):
 	details = frappe.db.get_value("Item", item_code, ["stock_uom", "name"], as_dict=1)
+=======
+def get_item_details(item_code, uom=None, warehouse=None, company=None):
+	details = frappe.db.get_value("Item", item_code, "stock_uom", as_dict=1)
+>>>>>>> 47055901c0 (fix: remove item name to avoid overriding item row name)
 	details.uom = uom or details.stock_uom
 	if uom:
 		details.update(get_conversion_factor(item_code, uom))
