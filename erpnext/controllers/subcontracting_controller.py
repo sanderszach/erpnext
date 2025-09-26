@@ -12,12 +12,8 @@ from frappe.utils import cint, flt, get_link_to_form
 
 from erpnext.controllers.stock_controller import StockController
 from erpnext.stock.doctype.serial_and_batch_bundle.serial_and_batch_bundle import (
-<<<<<<< HEAD
-=======
-	combine_datetime,
 	get_auto_batch_nos,
 	get_available_serial_nos,
->>>>>>> 23f9d4c600 (fix: auto batch not set for raw materials in subcontracting receipt)
 	get_voucher_wise_serial_batch_from_bundle,
 )
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
