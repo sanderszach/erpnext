@@ -548,8 +548,9 @@ class Company(NestedSet):
 				"Company", self.parent_company, ["reporting_currency"]
 			)
 			self.reporting_currency = parent_reporting_currency
+
 	def validate_pending_reposts(self, old_doc):
-		if old_doc.accounts_frozen_till_date != self.accounts_frozen_till_date:
+		if old_doc and old_doc.accounts_frozen_till_date != self.accounts_frozen_till_date:
 			if self.accounts_frozen_till_date:
 				check_pending_reposting(self.accounts_frozen_till_date)
 
