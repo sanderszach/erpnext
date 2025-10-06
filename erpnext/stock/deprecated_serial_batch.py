@@ -7,6 +7,7 @@ from frappe.query_builder.functions import CombineDatetime, Sum
 from frappe.utils import flt, nowtime
 from frappe.utils.deprecations import deprecated
 from pypika import Order
+from pypika.functions import Coalesce
 
 
 class DeprecatedSerialNoValuation:
@@ -197,9 +198,15 @@ class DeprecatedBatchNoValuation:
 
 	@deprecated
 	def set_balance_value_for_non_batchwise_valuation_batches(self):
-		self.last_sle = self.get_last_sle_for_non_batch()
+		if hasattr(self, "prev_sle"):
+			self.last_sle = self.prev_sle
+		else:
+			self.last_sle = self.get_last_sle_for_non_batch()
+
 		if self.last_sle and self.last_sle.stock_queue:
-			self.stock_queue = json.loads(self.last_sle.stock_queue or "[]") or []
+			self.stock_queue = self.last_sle.stock_queue
+			if isinstance(self.stock_queue, str):
+				self.stock_queue = json.loads(self.stock_queue) or []
 
 		self.set_balance_value_from_sl_entries()
 		self.set_balance_value_from_bundle()
@@ -293,10 +300,7 @@ class DeprecatedBatchNoValuation:
 			query = query.where(sle.name != self.sle.name)
 
 		if self.sle.serial_and_batch_bundle:
-			query = query.where(
-				(sle.serial_and_batch_bundle != self.sle.serial_and_batch_bundle)
-				| (sle.serial_and_batch_bundle.isnull())
-			)
+			query = query.where(Coalesce(sle.serial_and_batch_bundle, "") != self.sle.serial_and_batch_bundle)
 
 		data = query.run(as_dict=True)
 
