@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
  "allow_copy": 0, 
  "allow_guest_to_view": 0, 
  "allow_import": 0, 
@@ -12,6 +13,24 @@
  "document_type": "", 
  "editable_grid": 1, 
  "engine": "InnoDB", 
+=======
+ "actions": [],
+ "autoname": "field:period_name",
+ "creation": "2018-04-13 18:50:14.672323",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "period_name",
+  "start_date",
+  "end_date",
+  "column_break_4",
+  "company",
+  "disabled",
+  "section_break_7",
+  "closed_documents"
+ ],
+>>>>>>> bd928e0d56 (feat: add disabled field to Accounting Period)
  "fields": [
   {
    "allow_bulk_edit": 0, 
@@ -199,6 +218,7 @@
    "unique": 0
   }, 
   {
+<<<<<<< HEAD
    "allow_bulk_edit": 0, 
    "allow_on_submit": 0, 
    "bold": 0, 
@@ -247,6 +267,52 @@
  "name": "Accounting Period", 
  "name_case": "", 
  "owner": "Administrator", 
+=======
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "End Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Disabled"
+  },
+  {
+   "fieldname": "section_break_7",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "closed_documents",
+   "fieldtype": "Table",
+   "label": "Closed Documents",
+   "options": "Closed Document",
+   "reqd": 1
+  }
+ ],
+ "links": [],
+ "modified": "2025-10-06 15:00:15.568067",
+ "modified_by": "Administrator",
+ "module": "Accounts",
+ "name": "Accounting Period",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+>>>>>>> bd928e0d56 (feat: add disabled field to Accounting Period)
  "permissions": [
   {
    "amend": 0, 
@@ -305,6 +371,7 @@
    "submit": 0, 
    "write": 1
   }
+<<<<<<< HEAD
  ], 
  "quick_entry": 0, 
  "read_only": 0, 
@@ -315,3 +382,12 @@
  "track_changes": 1, 
  "track_seen": 0
 }
+=======
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
+>>>>>>> bd928e0d56 (feat: add disabled field to Accounting Period)
