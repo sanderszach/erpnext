@@ -13,10 +13,10 @@ from pypika.functions import Coalesce
 class DeprecatedSerialNoValuation:
 	@deprecated
 	def calculate_stock_value_from_deprecarated_ledgers(self):
-		if not has_sle_for_serial_nos(self.sle.item_code):
-			return
+		serial_nos = []
+		if hasattr(self, "old_serial_nos"):
+			serial_nos = self.old_serial_nos
 
-		serial_nos = self.get_filterd_serial_nos()
 		if not serial_nos:
 			return
 
@@ -26,6 +26,7 @@ class DeprecatedSerialNoValuation:
 
 		self.stock_value_change += flt(stock_value_change)
 
+<<<<<<< HEAD
 	def get_filterd_serial_nos(self):
 		serial_nos = []
 		non_filtered_serial_nos = self.get_serial_nos()
@@ -38,6 +39,14 @@ class DeprecatedSerialNoValuation:
 		return serial_nos
 
 	@deprecated
+=======
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.SerialNoValuation.get_incoming_value_for_serial_nos",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
+>>>>>>> 6a8bd0ae9e (refactor: old serial nos filter)
 	def get_incoming_value_for_serial_nos(self, serial_nos):
 		from erpnext.stock.utils import get_combine_datetime
 
@@ -80,20 +89,6 @@ class DeprecatedSerialNoValuation:
 				incoming_values += self.serial_no_incoming_rate[serial_no]
 
 		return incoming_values
-
-
-@frappe.request_cache
-def has_sle_for_serial_nos(item_code):
-	serial_nos = frappe.db.get_all(
-		"Stock Ledger Entry",
-		fields=["name"],
-		filters={"serial_no": ("is", "set"), "is_cancelled": 0, "item_code": item_code},
-		limit=1,
-	)
-	if serial_nos:
-		return True
-
-	return False
 
 
 class DeprecatedBatchNoValuation:
