@@ -26,27 +26,7 @@ class DeprecatedSerialNoValuation:
 
 		self.stock_value_change += flt(stock_value_change)
 
-<<<<<<< HEAD
-	def get_filterd_serial_nos(self):
-		serial_nos = []
-		non_filtered_serial_nos = self.get_serial_nos()
-
-		# If the serial no inwarded using the Serial and Batch Bundle, then the serial no should not be considered
-		for serial_no in non_filtered_serial_nos:
-			if serial_no and serial_no not in self.serial_no_incoming_rate:
-				serial_nos.append(serial_no)
-
-		return serial_nos
-
 	@deprecated
-=======
-	@deprecated(
-		"erpnext.stock.serial_batch_bundle.SerialNoValuation.get_incoming_value_for_serial_nos",
-		"unknown",
-		"v16",
-		"No known instructions.",
-	)
->>>>>>> 6a8bd0ae9e (refactor: old serial nos filter)
 	def get_incoming_value_for_serial_nos(self, serial_nos):
 		from erpnext.stock.utils import get_combine_datetime
 
