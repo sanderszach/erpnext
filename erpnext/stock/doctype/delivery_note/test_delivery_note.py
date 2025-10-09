@@ -2596,6 +2596,173 @@ class TestDeliveryNote(FrappeTestCase):
 		self.assertEqual(dn.per_billed, 100)
 		self.assertEqual(dn.per_returned, 100)
 
+<<<<<<< HEAD
+=======
+	def test_packed_item_serial_no_status(self):
+		from erpnext.selling.doctype.product_bundle.test_product_bundle import make_product_bundle
+		from erpnext.stock.doctype.item.test_item import make_item
+
+		# test Update Items with product bundle
+		if not frappe.db.exists("Item", "_Test Product Bundle Item New 1"):
+			bundle_item = make_item("_Test Product Bundle Item New 1", {"is_stock_item": 0})
+			bundle_item.append(
+				"item_defaults", {"company": "_Test Company", "default_warehouse": "_Test Warehouse - _TC"}
+			)
+			bundle_item.save(ignore_permissions=True)
+
+		make_item(
+			"_Packed Item New Sn Item",
+			{"is_stock_item": 1, "has_serial_no": 1, "serial_no_series": "SN-PACKED-NEW-.#####"},
+		)
+		make_product_bundle("_Test Product Bundle Item New 1", ["_Packed Item New Sn Item"], 1)
+
+		make_stock_entry(item="_Packed Item New Sn Item", target="_Test Warehouse - _TC", qty=5, rate=100)
+
+		dn = create_delivery_note(
+			item_code="_Test Product Bundle Item New 1",
+			warehouse="_Test Warehouse - _TC",
+			qty=5,
+		)
+
+		dn.reload()
+
+		serial_nos = []
+		for row in dn.packed_items:
+			self.assertTrue(row.serial_and_batch_bundle)
+			doc = frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+			for row in doc.entries:
+				status = frappe.db.get_value("Serial No", row.serial_no, "status")
+				self.assertEqual(status, "Delivered")
+				serial_nos.append(row.serial_no)
+
+		dn.cancel()
+
+		for row in serial_nos:
+			status = frappe.db.get_value("Serial No", row, "status")
+			self.assertEqual(status, "Active")
+
+	def test_sales_return_for_product_bundle(self):
+		from erpnext.selling.doctype.product_bundle.test_product_bundle import make_product_bundle
+		from erpnext.stock.doctype.delivery_note.delivery_note import make_sales_return
+		from erpnext.stock.doctype.item.test_item import make_item
+
+		rm_items = []
+		for item_code, properties in {
+			"_Packed Service Item": {"is_stock_item": 0},
+			"_Packed FG Item New 1": {
+				"is_stock_item": 1,
+				"has_serial_no": 1,
+				"serial_no_series": "SN-PACKED-1-.#####",
+			},
+			"_Packed FG Item New 2": {
+				"is_stock_item": 1,
+				"has_batch_no": 1,
+				"create_new_batch": 1,
+				"batch_number_series": "BATCH-PACKED-2-.#####",
+			},
+			"_Packed FG Item New 3": {
+				"is_stock_item": 1,
+				"has_batch_no": 1,
+				"create_new_batch": 1,
+				"batch_number_series": "BATCH-PACKED-3-.#####",
+				"has_serial_no": 1,
+				"serial_no_series": "SN-PACKED-3-.#####",
+			},
+		}.items():
+			if not frappe.db.exists("Item", item_code):
+				make_item(item_code, properties)
+
+			if item_code != "_Packed Service Item":
+				rm_items.append(item_code)
+
+				for rate in [100, 200]:
+					make_stock_entry(item=item_code, target="_Test Warehouse - _TC", qty=5, rate=rate)
+
+		make_product_bundle("_Packed Service Item", rm_items)
+		dn = create_delivery_note(
+			item_code="_Packed Service Item",
+			warehouse="_Test Warehouse - _TC",
+			qty=5,
+		)
+
+		serial_batch_map = {}
+		for row in dn.packed_items:
+			self.assertTrue(row.serial_and_batch_bundle)
+			if row.item_code not in serial_batch_map:
+				serial_batch_map[row.item_code] = frappe._dict(
+					{
+						"serial_nos": [],
+						"batches": defaultdict(int),
+						"serial_no_valuation": defaultdict(float),
+						"batch_no_valuation": defaultdict(float),
+					}
+				)
+
+			doc = frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+			for entry in doc.entries:
+				if entry.serial_no:
+					serial_batch_map[row.item_code].serial_nos.append(entry.serial_no)
+					serial_batch_map[row.item_code].serial_no_valuation[entry.serial_no] = entry.incoming_rate
+				if entry.batch_no:
+					serial_batch_map[row.item_code].batches[entry.batch_no] += entry.qty
+					serial_batch_map[row.item_code].batch_no_valuation[entry.batch_no] = entry.incoming_rate
+
+		dn1 = make_sales_return(dn.name)
+		dn1.items[0].qty = -2
+		dn1.submit()
+		dn1.reload()
+
+		for row in dn1.packed_items:
+			doc = frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+			for entry in doc.entries:
+				if entry.serial_no:
+					self.assertTrue(entry.serial_no in serial_batch_map[row.item_code].serial_nos)
+					self.assertEqual(
+						entry.incoming_rate,
+						serial_batch_map[row.item_code].serial_no_valuation[entry.serial_no],
+					)
+					serial_batch_map[row.item_code].serial_nos.remove(entry.serial_no)
+					serial_batch_map[row.item_code].serial_no_valuation.pop(entry.serial_no)
+
+				elif entry.batch_no:
+					serial_batch_map[row.item_code].batches[entry.batch_no] += entry.qty
+					self.assertTrue(entry.batch_no in serial_batch_map[row.item_code].batches)
+					self.assertEqual(entry.qty, 2.0)
+					self.assertEqual(
+						entry.incoming_rate,
+						serial_batch_map[row.item_code].batch_no_valuation[entry.batch_no],
+					)
+
+		dn2 = make_sales_return(dn.name)
+		dn2.items[0].qty = -3
+		dn2.submit()
+		dn2.reload()
+
+		for row in dn2.packed_items:
+			doc = frappe.get_doc("Serial and Batch Bundle", row.serial_and_batch_bundle)
+			for entry in doc.entries:
+				if entry.serial_no:
+					self.assertTrue(entry.serial_no in serial_batch_map[row.item_code].serial_nos)
+					self.assertEqual(
+						entry.incoming_rate,
+						serial_batch_map[row.item_code].serial_no_valuation[entry.serial_no],
+					)
+					serial_batch_map[row.item_code].serial_nos.remove(entry.serial_no)
+					serial_batch_map[row.item_code].serial_no_valuation.pop(entry.serial_no)
+
+				elif entry.batch_no:
+					serial_batch_map[row.item_code].batches[entry.batch_no] += entry.qty
+					self.assertEqual(serial_batch_map[row.item_code].batches[entry.batch_no], 0.0)
+
+					self.assertTrue(entry.batch_no in serial_batch_map[row.item_code].batches)
+
+					self.assertEqual(entry.qty, 3.0)
+					self.assertEqual(
+						entry.incoming_rate,
+						serial_batch_map[row.item_code].batch_no_valuation[entry.batch_no],
+					)
+
+>>>>>>> 1d57bbca11 (test: test case for sales return for product bundle)
 
 def create_delivery_note(**args):
 	dn = frappe.new_doc("Delivery Note")
