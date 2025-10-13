@@ -1543,6 +1543,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 	include_safety_stock = doc.get("include_safety_stock")
 
 	so_item_details = frappe._dict()
+	existing_sub_assembly_items = set()
 
 	sub_assembly_items = defaultdict(int)
 	if doc.get("skip_available_sub_assembly_item") and doc.get("sub_assembly_items"):
@@ -1572,6 +1573,7 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 				frappe.throw(_("For row {0}: Enter Planned Qty").format(data.get("idx")))
 
 			if bom_no:
+<<<<<<< HEAD
 				if data.get("include_exploded_items") and doc.get("skip_available_sub_assembly_item"):
 					item_details = {}
 					if doc.get("sub_assembly_items"):
@@ -1584,6 +1586,22 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 							sub_assembly_items,
 							planned_qty=planned_qty,
 						)
+=======
+				if (
+					data.get("include_exploded_items")
+					and doc.get("skip_available_sub_assembly_item")
+					and doc.get("sub_assembly_items")
+				):
+					item_details = get_raw_materials_of_sub_assembly_items(
+						existing_sub_assembly_items,
+						item_details,
+						company,
+						bom_no,
+						include_non_stock_items,
+						sub_assembly_items,
+						planned_qty=planned_qty,
+					)
+>>>>>>> f912c8419a (fix: enhance sub-assembly item handling in raw material request calculations)
 
 				elif data.get("include_exploded_items") and include_subcontracted_items:
 					# fetch exploded items from BOM
@@ -1955,6 +1973,7 @@ def get_raw_materials_of_sub_assembly_items(
 				sub_assembly_items,
 				planned_qty=planned_qty,
 			)
+			existing_sub_assembly_items.add(item.item_code)
 		else:
 			if not item.conversion_factor and item.purchase_uom:
 				item.conversion_factor = get_uom_conversion_factor(item.item_code, item.purchase_uom)
