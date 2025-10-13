@@ -31,6 +31,16 @@ class ProductionPlanReport:
 		return self.columns, self.data
 
 	def get_open_orders(self):
+		"""
+		Load open orders into self.orders according to the report filters.
+		
+		Builds and executes a query determined by self.filters.based_on and self.filters.order_by:
+		- For "Work Order": selects production fields for active work orders and optionally orders by planned start date or filters by docnames.
+		- For other doctypes: joins with the corresponding "<Doctype> Item" child table to select BOM/item-based production lines; includes special handling for "Sales Order" (filters undelivered/open orders, optional ordering by delivery date or total amount) and "Material Request" (filters manufacture-type requests with outstanding quantity, optional ordering by required date).
+		The query always restricts to submitted documents (docstatus == 1) and applies a company filter when provided.
+		
+		After execution, assigns the query result (list of dicts) to self.orders.
+		"""
 		doctype, order_by = self.filters.based_on, self.filters.order_by
 
 		parent = frappe.qb.DocType(doctype)
@@ -113,6 +123,13 @@ class ProductionPlanReport:
 		self.orders = query.run(as_dict=True)
 
 	def get_raw_materials(self):
+		"""Retrieve raw materials and source warehouses for production orders.
+
+		This method collects BOM or Work Order items depending on the selected
+		filter and updates `self.raw_materials_dict`, `self.warehouses`,
+		and `self.item_codes` accordingly.
+		"""
+
 		if not self.orders:
 			return
 		self.warehouses = [d.warehouse for d in self.orders]
@@ -135,7 +152,7 @@ class ProductionPlanReport:
 				)
 				or []
 			)
-			self.warehouses.extend([d.source_warehouse for d in raw_materials])
+			self.warehouses.extend([d.warehouse for d in raw_materials])
 
 		else:
 			bom_nos = []
