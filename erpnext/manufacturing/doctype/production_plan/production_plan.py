@@ -1573,12 +1573,11 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 				frappe.throw(_("For row {0}: Enter Planned Qty").format(data.get("idx")))
 
 			if bom_no:
-<<<<<<< HEAD
 				if data.get("include_exploded_items") and doc.get("skip_available_sub_assembly_item"):
 					item_details = {}
 					if doc.get("sub_assembly_items"):
 						item_details = get_raw_materials_of_sub_assembly_items(
-							so_item_details[doc.get("sales_order")].keys() if so_item_details else [],
+							existing_sub_assembly_items,
 							item_details,
 							company,
 							bom_no,
@@ -1586,22 +1585,6 @@ def get_items_for_material_requests(doc, warehouses=None, get_parent_warehouse_d
 							sub_assembly_items,
 							planned_qty=planned_qty,
 						)
-=======
-				if (
-					data.get("include_exploded_items")
-					and doc.get("skip_available_sub_assembly_item")
-					and doc.get("sub_assembly_items")
-				):
-					item_details = get_raw_materials_of_sub_assembly_items(
-						existing_sub_assembly_items,
-						item_details,
-						company,
-						bom_no,
-						include_non_stock_items,
-						sub_assembly_items,
-						planned_qty=planned_qty,
-					)
->>>>>>> f912c8419a (fix: enhance sub-assembly item handling in raw material request calculations)
 
 				elif data.get("include_exploded_items") and include_subcontracted_items:
 					# fetch exploded items from BOM
