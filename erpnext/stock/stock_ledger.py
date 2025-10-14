@@ -496,7 +496,14 @@ class update_entries_after:
 			elif dependant_sle.voucher_type == "Stock Entry" and is_transfer_stock_entry(
 				dependant_sle.voucher_no
 			):
+<<<<<<< HEAD
 				print(dependant_sle.voucher_no)
+=======
+				if self.distinct_item_warehouses[key].get("transfer_entry_to_repost"):
+					return
+
+				val["transfer_entry_to_repost"] = True
+>>>>>>> 2f25b445ab (fix: do reposting of first transfer entry based on item-wh combination)
 				self.distinct_item_warehouses[key] = val
 				self.new_items_found = True
 
