@@ -1149,11 +1149,7 @@
  "idx": 1,
  "istable": 1,
  "links": [],
-<<<<<<< HEAD
- "modified": "2025-03-12 17:10:43.780622",
-=======
- "modified": "2025-10-14 12:58:20.384056",
->>>>>>> 1afc75b15a (fix: performance issue by adding index)
+ "modified": "2025-10-14 12:59:20.384056",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Purchase Receipt Item",
