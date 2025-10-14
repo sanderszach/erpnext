@@ -797,10 +797,7 @@ frappe.ui.form.on("Sales Invoice", {
 					is_group: 0,
 				},
 			};
-<<<<<<< HEAD
 		};
-=======
-		});
 
 		frm.set_query("sales_person", "sales_team", function () {
 			return {
@@ -810,7 +807,6 @@ frappe.ui.form.on("Sales Invoice", {
 				},
 			};
 		});
->>>>>>> 2fcd406b18 (fix: filter sales team to show only active individual salespersons)
 	},
 	onload: function (frm) {
 		frm.redemption_conversion_factor = null;
