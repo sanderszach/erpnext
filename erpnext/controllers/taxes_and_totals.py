@@ -8,11 +8,15 @@ import frappe
 from frappe import _, scrub
 from frappe.model.document import Document
 <<<<<<< HEAD
+<<<<<<< HEAD
 from frappe.utils import cint, flt, round_based_on_smallest_currency_fraction
 from frappe.utils.deprecations import deprecated
 =======
 from frappe.utils import cint, flt, fmt_money, round_based_on_smallest_currency_fraction
 >>>>>>> f4f79d99e4 (fix: validate that discount amount cannot exceed total before discount)
+=======
+from frappe.utils import cint, flt, round_based_on_smallest_currency_fraction
+>>>>>>> 81ab15351e (chore: remove unused import)
 
 import erpnext
 from erpnext.accounts.doctype.journal_entry.journal_entry import get_exchange_rate
