@@ -13,7 +13,15 @@ from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sal
 from erpnext.accounts.utils import get_fiscal_year
 
 
+<<<<<<< HEAD
 class TestPeriodClosingVoucher(unittest.TestCase):
+=======
+class TestPeriodClosingVoucher(IntegrationTestCase):
+	def setUp(self):
+		super().setUp()
+		frappe.db.set_single_value("Accounts Settings", "use_legacy_controller_for_pcv", 1)
+
+>>>>>>> fe39ce03bb (refactor: enable legacy controller by default for pcv)
 	def test_closing_entry(self):
 		frappe.db.sql("delete from `tabGL Entry` where company='Test PCV Company'")
 		frappe.db.sql("delete from `tabPeriod Closing Voucher` where company='Test PCV Company'")
