@@ -131,6 +131,13 @@ class Asset(AccountsController):
 		self.set_missing_values()
 		self.validate_gross_and_purchase_amount()
 		self.validate_finance_books()
+<<<<<<< HEAD
+=======
+
+	def before_save(self):
+		self.total_asset_cost = self.net_purchase_amount + self.additional_asset_cost
+		self.status = self.get_status()
+>>>>>>> 20c2cb40d1 (fix: set status to Draft for auto-created assets from Purchase Receipt)
 
 		if not self.split_from:
 			self.prepare_depreciation_data()
