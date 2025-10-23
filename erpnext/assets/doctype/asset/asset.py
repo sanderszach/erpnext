@@ -154,7 +154,7 @@ class Asset(AccountsController):
 		self.set_total_booked_depreciations()
 
 	def before_save(self):
-		self.total_asset_cost = self.net_purchase_amount + self.additional_asset_cost
+		self.total_asset_cost = self.gross_purchase_amount + self.additional_asset_cost
 		self.status = self.get_status()
 
 	def on_submit(self):
