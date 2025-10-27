@@ -801,7 +801,6 @@ class BatchNoValuation(DeprecatedBatchNoValuation):
 					== CombineDatetime(self.sle.posting_date, self.sle.posting_time)
 				) & (parent.creation < self.sle.creation)
 
-
 		query = (
 			frappe.qb.from_(parent)
 			.inner_join(child)
