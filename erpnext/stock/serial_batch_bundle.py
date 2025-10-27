@@ -748,24 +748,6 @@ class BatchNoValuation(DeprecatedBatchNoValuation):
 		parent = frappe.qb.DocType("Serial and Batch Bundle")
 		child = frappe.qb.DocType("Serial and Batch Entry")
 
-<<<<<<< HEAD
-		timestamp_condition = ""
-		if self.sle.posting_date:
-			if self.sle.posting_time is None:
-				self.sle.posting_time = nowtime()
-
-			timestamp_condition = CombineDatetime(parent.posting_date, parent.posting_time) < CombineDatetime(
-				self.sle.posting_date, self.sle.posting_time
-			)
-
-			if self.sle.creation:
-				timestamp_condition |= (
-					CombineDatetime(parent.posting_date, parent.posting_time)
-					== CombineDatetime(self.sle.posting_date, self.sle.posting_time)
-				) & (parent.creation < self.sle.creation)
-
-=======
->>>>>>> 9c21567309 (fix: optimized the slow query to get the batchwise available qty)
 		query = (
 			frappe.qb.from_(parent)
 			.inner_join(child)
@@ -805,13 +787,20 @@ class BatchNoValuation(DeprecatedBatchNoValuation):
 		child = frappe.qb.DocType("Serial and Batch Entry")
 
 		timestamp_condition = ""
-		if self.sle.posting_datetime:
-			timestamp_condition = parent.posting_datetime < self.sle.posting_datetime
+		if self.sle.posting_date:
+			if self.sle.posting_time is None:
+				self.sle.posting_time = nowtime()
+
+			timestamp_condition = CombineDatetime(parent.posting_date, parent.posting_time) < CombineDatetime(
+				self.sle.posting_date, self.sle.posting_time
+			)
 
 			if self.sle.creation:
-				timestamp_condition |= (parent.posting_datetime == self.sle.posting_datetime) & (
-					parent.creation < self.sle.creation
-				)
+				timestamp_condition |= (
+					CombineDatetime(parent.posting_date, parent.posting_time)
+					== CombineDatetime(self.sle.posting_date, self.sle.posting_time)
+				) & (parent.creation < self.sle.creation)
+
 
 		query = (
 			frappe.qb.from_(parent)
