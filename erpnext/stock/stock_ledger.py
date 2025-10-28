@@ -893,7 +893,11 @@ class update_entries_after:
 		sle.stock_queue = json.dumps(self.wh_data.stock_queue)
 
 		sle.stock_value_difference = stock_value_difference
-		if sle.is_adjustment_entry and flt(sle.qty_after_transaction, self.flt_precision) == 0:
+		if (
+			sle.is_adjustment_entry
+			and flt(sle.qty_after_transaction, self.flt_precision) == 0
+			and flt(sle.stock_value, self.currency_precision) != 0
+		):
 			sle.stock_value_difference = (
 				get_stock_value_difference(
 					sle.item_code,
@@ -901,6 +905,7 @@ class update_entries_after:
 					sle.posting_date,
 					sle.posting_time,
 					voucher_detail_no=sle.voucher_detail_no,
+					creation=sle.creation,
 				)
 				* -1
 			)
@@ -2358,7 +2363,7 @@ def is_internal_transfer(sle):
 
 
 def get_stock_value_difference(
-	item_code, warehouse, posting_date, posting_time, voucher_no=None, voucher_detail_no=None
+	item_code, warehouse, posting_date, posting_time, voucher_no=None, voucher_detail_no=None, creation=None
 ):
 	table = frappe.qb.DocType("Stock Ledger Entry")
 	posting_datetime = get_combine_datetime(posting_date, posting_time)
@@ -2366,12 +2371,7 @@ def get_stock_value_difference(
 	query = (
 		frappe.qb.from_(table)
 		.select(Sum(table.stock_value_difference).as_("value"))
-		.where(
-			(table.is_cancelled == 0)
-			& (table.item_code == item_code)
-			& (table.warehouse == warehouse)
-			& (table.posting_datetime <= posting_datetime)
-		)
+		.where((table.is_cancelled == 0) & (table.item_code == item_code) & (table.warehouse == warehouse))
 	)
 
 	if voucher_detail_no:
@@ -2379,6 +2379,14 @@ def get_stock_value_difference(
 
 	elif voucher_no:
 		query = query.where(table.voucher_no != voucher_no)
+
+	if creation:
+		query = query.where(
+			(table.posting_datetime < posting_datetime)
+			| ((table.posting_datetime == posting_datetime) & (table.creation < creation))
+		)
+	else:
+		query = query.where(table.posting_datetime <= posting_datetime)
 
 	difference_amount = query.run()
 	return flt(difference_amount[0][0]) if difference_amount else 0
