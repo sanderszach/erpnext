@@ -237,17 +237,10 @@ erpnext.accounts.pos = {
 		frappe.ui.form.on(doctype, {
 			mode_of_payment: function(frm, cdt, cdn) {
 				var d = locals[cdt][cdn];
-<<<<<<< HEAD
-				get_payment_mode_account(frm, d.mode_of_payment, function(account){
-					frappe.model.set_value(cdt, cdn, 'account', account)
-				})
-			}
-=======
 				erpnext.accounts.pos.get_payment_mode_account(frm, d.mode_of_payment, function (account) {
 					frappe.model.set_value(cdt, cdn, "account", account);
 				});
 			},
->>>>>>> 0af74aef00 (fix(accounts): update payment mode account retrieval to use namespaced function)
 		});
 	},
 
