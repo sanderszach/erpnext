@@ -55,19 +55,11 @@ class ItemPrice(Document):
 		if not frappe.db.exists("Item", self.item_code):
 			frappe.throw(_("Item {0} not found.").format(self.item_code))
 
-<<<<<<< HEAD
-=======
 		if self.uom and not frappe.db.exists(
 			"UOM Conversion Detail", {"parenttype": "Item", "parent": self.item_code, "uom": self.uom}
 		):
 			frappe.throw(_("UOM {0} not found in Item {1}").format(self.uom, self.item_code))
 
-	def validate_dates(self):
-		if self.valid_from and self.valid_upto:
-			if getdate(self.valid_from) > getdate(self.valid_upto):
-				frappe.throw(_("Valid From Date must be lesser than Valid Up To Date."))
-
->>>>>>> 69824eff80 (feat(Item Price): validate UOM)
 	def update_price_list_details(self):
 		if self.price_list:
 			price_list_details = frappe.db.get_value(
