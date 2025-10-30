@@ -4287,7 +4287,7 @@ class TestPurchaseReceipt(FrappeTestCase):
 
 		frappe.db.set_single_value("Buying Settings", "set_valuation_rate_for_rejected_materials", 0)
 
-	@IntegrationTestCase.change_settings(
+	@change_settings(
 		"Buying Settings",
 		{"bill_for_rejected_quantity_in_purchase_invoice": 1, "set_valuation_rate_for_rejected_materials": 1},
 	)
