@@ -119,7 +119,12 @@ def get_assets_details(assets):
 
 	fields = [
 		"name as asset",
+<<<<<<< HEAD
 		"gross_purchase_amount",
+=======
+		"asset_name",
+		"net_purchase_amount",
+>>>>>>> f3eda02972 (feat: add asset name column)
 		"opening_accumulated_depreciation",
 		"asset_category",
 		"status",
@@ -142,6 +147,12 @@ def get_columns():
 			"fieldtype": "Link",
 			"options": "Asset",
 			"width": 120,
+		},
+		{
+			"label": _("Asset Name"),
+			"fieldname": "asset_name",
+			"fieldtype": "Data",
+			"width": 140,
 		},
 		{
 			"label": _("Depreciation Date"),
