@@ -75,6 +75,67 @@ class AssetRepair(AccountsController):
 				_("Completion Date can not be before Failure Date. Please adjust the dates accordingly.")
 			)
 
+<<<<<<< HEAD
+=======
+	def validate_purchase_invoices(self):
+		for d in self.invoices:
+			self.validate_purchase_invoice_status(d.purchase_invoice)
+			invoice_items = self.get_invoice_items(d.purchase_invoice)
+			self.validate_service_purchase_invoice(d.purchase_invoice, invoice_items)
+			self.validate_expense_account(d, invoice_items)
+			self.validate_purchase_invoice_repair_cost(d, invoice_items)
+
+	def validate_purchase_invoice_status(self, purchase_invoice):
+		docstatus = frappe.db.get_value("Purchase Invoice", purchase_invoice, "docstatus")
+		if docstatus == 0:
+			frappe.throw(
+				_("{0} is still in Draft. Please submit it before saving the Asset Repair.").format(
+					get_link_to_form("Purchase Invoice", purchase_invoice)
+				)
+			)
+
+	def get_invoice_items(self, pi):
+		invoice_items = frappe.get_all(
+			"Purchase Invoice Item",
+			filters={"parent": pi},
+			fields=["item_code", "expense_account", "base_net_amount"],
+		)
+
+		return invoice_items
+
+	def validate_service_purchase_invoice(self, purchase_invoice, invoice_items):
+		service_item_exists = False
+		for item in invoice_items:
+			if frappe.db.get_value("Item", item.item_code, "is_stock_item") == 0:
+				service_item_exists = True
+				break
+
+		if not service_item_exists:
+			frappe.throw(
+				_("Service item not present in Purchase Invoice {0}").format(
+					get_link_to_form("Purchase Invoice", purchase_invoice)
+				)
+			)
+
+	def validate_expense_account(self, row, invoice_items):
+		pi_expense_accounts = set([item.expense_account for item in invoice_items])
+		if row.expense_account not in pi_expense_accounts:
+			frappe.throw(
+				_("Expense account {0} not present in Purchase Invoice {1}").format(
+					row.expense_account, get_link_to_form("Purchase Invoice", row.purchase_invoice)
+				)
+			)
+
+	def validate_purchase_invoice_repair_cost(self, row, invoice_items):
+		pi_net_total = sum([flt(item.base_net_amount) for item in invoice_items])
+		if flt(row.repair_cost) > pi_net_total:
+			frappe.throw(
+				_("Repair cost cannot be greater than purchase invoice base net total {0}").format(
+					pi_net_total
+				)
+			)
+
+>>>>>>> 1928a394c9 (fix: validate purchase invoice status and resolve related issues)
 	def update_status(self):
 		if self.repair_status == "Pending" and self.asset_doc.status != "Out of Order":
 			frappe.db.set_value("Asset", self.asset, "status", "Out of Order")

@@ -365,6 +365,7 @@
    "label": "Maintenance Required"
   },
   {
+<<<<<<< HEAD
    "collapsible": 1,
    "fieldname": "other_details",
    "fieldtype": "Section Break",
@@ -372,6 +373,8 @@
   },
   {
    "allow_on_submit": 1,
+=======
+>>>>>>> 1928a394c9 (fix: validate purchase invoice status and resolve related issues)
    "default": "Draft",
    "fieldname": "status",
    "fieldtype": "Select",
@@ -379,7 +382,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "no_copy": 1,
-   "options": "Draft\nSubmitted\nPartially Depreciated\nFully Depreciated\nSold\nScrapped\nIn Maintenance\nOut of Order\nIssue\nReceipt\nCapitalized\nWork In Progress",
+   "options": "Draft\nSubmitted\nCancelled\nPartially Depreciated\nFully Depreciated\nSold\nScrapped\nIn Maintenance\nOut of Order\nIssue\nReceipt\nCapitalized\nWork In Progress",
    "read_only": 1
   },
   {
@@ -597,7 +600,11 @@
    "link_fieldname": "target_asset"
   }
  ],
+<<<<<<< HEAD
  "modified": "2025-10-23 22:43:33.634452",
+=======
+ "modified": "2025-11-04 22:39:00.817405",
+>>>>>>> 1928a394c9 (fix: validate purchase invoice status and resolve related issues)
  "modified_by": "Administrator",
  "module": "Assets",
  "name": "Asset",
