@@ -242,6 +242,36 @@ frappe.ui.form.on("Work Order", {
 
 		frm.trigger("add_custom_button_to_return_components");
 		frm.trigger("allow_alternative_item");
+<<<<<<< HEAD
+=======
+		frm.trigger("hide_reserve_stock_button");
+		frm.trigger("toggle_items_editable");
+	},
+
+	toggle_items_editable(frm) {
+		frm.toggle_enable("required_items", frm.doc.__onload?.allow_editing_items === 1 ? 1 : 0);
+	},
+
+	hide_reserve_stock_button(frm) {
+		frm.toggle_display("reserve_stock", false);
+		if (frm.doc.__onload?.enable_stock_reservation) {
+			frm.toggle_display("reserve_stock", true);
+		}
+	},
+
+	has_unreserved_stock(frm) {
+		let has_unreserved_stock = frm.doc.required_items.some(
+			(item) => flt(item.required_qty) > flt(item.stock_reserved_qty)
+		);
+
+		return has_unreserved_stock;
+	},
+
+	has_reserved_stock(frm) {
+		let has_reserved_stock = frm.doc.required_items.some((item) => flt(item.stock_reserved_qty) > 0);
+
+		return has_reserved_stock;
+>>>>>>> b5e6c3e703 (feat: Allow Editing of Items and Quantities in Work Order)
 	},
 
 	add_custom_button_to_return_components: function (frm) {
