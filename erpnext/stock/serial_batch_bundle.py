@@ -1334,10 +1334,6 @@ class SerialBatchCreation:
 		if self.get("voucher_no"):
 			voucher_no = self.get("voucher_no")
 
-		voucher_type = ""
-		if self.get("voucher_type"):
-			voucher_type = self.get("voucher_type")
-
 		obj = NamingSeries(self.serial_no_series)
 		current_value = obj.get_current_value()
 
