@@ -13,11 +13,7 @@ from erpnext.controllers.stock_controller import StockController
 from erpnext.stock.doctype.batch.batch import get_batch_qty
 from erpnext.stock.doctype.inventory_dimension.inventory_dimension import get_inventory_dimensions
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
-<<<<<<< HEAD
-from erpnext.stock.utils import get_stock_balance
-=======
-from erpnext.stock.utils import get_combine_datetime, get_incoming_rate, get_stock_balance
->>>>>>> 58315bc963 (fix: current qty in stock reco)
+from erpnext.stock.utils import get_combine_datetime, get_stock_balance
 
 
 class OpeningEntryAccountError(frappe.ValidationError):
