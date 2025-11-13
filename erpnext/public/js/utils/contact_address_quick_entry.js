@@ -39,13 +39,25 @@ frappe.ui.form.ContactAddressQuickEntryForm = class ContactAddressQuickEntryForm
 				collapsible: 1,
 			},
 			{
+				label: __("First Name"),
+				fieldname: "map_to_first_name",
+				fieldtype: "Data",
+				depends_on: "eval:doc.customer_type=='Company' || doc.supplier_type=='Company'",
+			},
+			{
+				label: __("Last Name"),
+				fieldname: "map_to_last_name",
+				fieldtype: "Data",
+				depends_on: "eval:doc.customer_type=='Company' || doc.supplier_type=='Company'",
+			},
+			{
+				fieldtype: "Column Break",
+			},
+			{
 				label: __("Email Id"),
 				fieldname: "email_address",
 				fieldtype: "Data",
 				options: "Email",
-			},
-			{
-				fieldtype: "Column Break",
 			},
 			{
 				label: __("Mobile Number"),
