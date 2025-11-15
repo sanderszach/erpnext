@@ -16,6 +16,10 @@ from frappe.utils import cstr, getdate
 
 from erpnext.accounts.doctype.account.account import RootNotEditable
 from erpnext.regional.address_template.setup import set_up_address_templates
+<<<<<<< HEAD
+=======
+from erpnext.setup.utils import identity as _
+>>>>>>> 9a989a84fb (fix: use dummy translations for custom field labels (#49875))
 
 
 def read_lines(filename: str) -> list[str]:
@@ -550,7 +554,7 @@ def create_bank_account(args, demo=False):
 			return doc
 
 		except RootNotEditable:
-			frappe.throw(_("Bank account cannot be named as {0}").format(args.get("bank_account")))
+			frappe.throw(frappe._("Bank account cannot be named as {0}").format(args.get("bank_account")))
 		except frappe.DuplicateEntryError:
 			# bank account same as a CoA entry
 			pass
