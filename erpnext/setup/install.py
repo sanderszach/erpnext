@@ -6,7 +6,6 @@ import click
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 from frappe.desk.page.setup_wizard.setup_wizard import add_all_roles_to
-from frappe.utils import cint
 
 import erpnext
 from erpnext.setup.default_energy_point_rules import get_default_energy_point_rules
@@ -193,10 +192,6 @@ def add_company_to_session_defaults():
 
 def add_standard_navbar_items():
 	navbar_settings = frappe.get_single("Navbar Settings")
-<<<<<<< HEAD
-
-=======
->>>>>>> 9a989a84fb (fix: use dummy translations for custom field labels (#49875))
 	erpnext_navbar_items = [
 		{
 			"item_label": _("Documentation"),
