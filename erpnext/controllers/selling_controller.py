@@ -137,6 +137,7 @@ class SellingController(StockController):
 					lead,
 					posting_date=self.get("transaction_date") or self.get("posting_date"),
 					company=self.company,
+					doctype=self.doctype,
 				)
 			)
 
