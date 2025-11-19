@@ -38,6 +38,7 @@
    "unique": 0
   }, 
   {
+<<<<<<< HEAD
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -85,3 +86,28 @@
  "read_only_onload": 0, 
  "track_seen": 0
 }
+=======
+   "fieldname": "conversion_factor",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Conversion Factor",
+   "non_negative": 1,
+   "oldfieldname": "conversion_factor",
+   "oldfieldtype": "Float"
+  }
+ ],
+ "idx": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-11-19 21:27:13.968771",
+ "modified_by": "Administrator",
+ "module": "Stock",
+ "name": "UOM Conversion Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
+>>>>>>> 6141071a18 (fix(uom): validate negative conversion factor)
