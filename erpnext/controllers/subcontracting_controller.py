@@ -343,9 +343,23 @@ class SubcontractingController(StockController):
 
 			i += 1
 
+<<<<<<< HEAD
 	def __get_materials_from_bom(self, item_code, bom_no, exploded_item=0):
 		doctype = "BOM Explosion Item" if exploded_item else "BOM Item"
 		fields = [f"`tab{doctype}`.`stock_qty` / `tabBOM`.`quantity` as qty_consumed_per_unit"]
+=======
+	def __remove_serial_and_batch_bundle(self, item):
+		if item.get("serial_and_batch_bundle"):
+			frappe.delete_doc("Serial and Batch Bundle", item.serial_and_batch_bundle, force=True)
+
+	def _get_materials_from_bom(self, item_code, bom_no, exploded_item=0):
+		data = []
+
+		doctype = "BOM Item" if not exploded_item else "BOM Explosion Item"
+		fields = [
+			{"DIV": [f"`tab{doctype}`.`stock_qty`", "`tabBOM`.`quantity`"], "as": "qty_consumed_per_unit"}
+		]
+>>>>>>> d01c4b68fe (fix: add validation for FG Items as per BOM qty (#50579))
 
 		alias_dict = {
 			"item_code": "rm_item_code",
@@ -371,7 +385,23 @@ class SubcontractingController(StockController):
 			[doctype, "sourced_by_supplier", "=", 0],
 		]
 
+<<<<<<< HEAD
 		return frappe.get_all("BOM", fields=fields, filters=filters, order_by=f"`tab{doctype}`.`idx`") or []
+=======
+		data = frappe.get_all("BOM", fields=fields, filters=filters, order_by=f"`tab{doctype}`.`idx`") or []
+		to_remove = []
+		for item in data:
+			if item.is_phantom_item:
+				data += self._get_materials_from_bom(
+					item.rm_item_code, item.bom_no, exploded_item=exploded_item
+				)
+				to_remove.append(item)
+
+		for item in to_remove:
+			data.remove(item)
+
+		return data
+>>>>>>> d01c4b68fe (fix: add validation for FG Items as per BOM qty (#50579))
 
 	def __update_reserve_warehouse(self, row, item):
 		if self.doctype == self.subcontract_data.order_doctype:
@@ -502,8 +532,15 @@ class SubcontractingController(StockController):
 			):
 				continue
 
+<<<<<<< HEAD
 			if self.doctype == self.subcontract_data.order_doctype or self.backflush_based_on == "BOM":
 				for bom_item in self.__get_materials_from_bom(
+=======
+			if self.doctype == self.subcontract_data.order_doctype or (
+				self.backflush_based_on == "BOM" or self.is_return
+			):
+				for bom_item in self._get_materials_from_bom(
+>>>>>>> d01c4b68fe (fix: add validation for FG Items as per BOM qty (#50579))
 					row.item_code, row.bom, row.get("include_exploded_items")
 				):
 					qty = flt(bom_item.qty_consumed_per_unit) * flt(row.qty) * row.conversion_factor
