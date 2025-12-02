@@ -114,6 +114,7 @@ frappe.ui.form.on("Job Card", {
 			(frm.doc.for_quantity > frm.doc.total_completed_qty || !frm.doc.for_quantity) &&
 			(frm.doc.items || !frm.doc.items.length || frm.doc.for_quantity == frm.doc.transferred_qty)
 		) {
+<<<<<<< HEAD
 			// if Job Card is link to Work Order, the job card must not be able to start if Work Order not "Started"
 			// and if stock mvt for WIP is required
 			if (frm.doc.work_order) {
@@ -130,6 +131,37 @@ frappe.ui.form.on("Job Card", {
 						) {
 							frm.trigger("prepare_timer_buttons");
 						}
+=======
+			let last_row = {};
+			if (frm.doc.sub_operations?.length && frm.doc.time_logs?.length) {
+				last_row = get_last_row(frm.doc.time_logs);
+			}
+
+			if (
+				(!frm.doc.time_logs?.length || (frm.doc.sub_operations?.length && last_row?.to_time)) &&
+				!frm.doc.is_paused
+			) {
+				frm.add_custom_button(__("Start Job"), () => {
+					let from_time = frappe.datetime.now_datetime();
+					if ((frm.doc.employee && !frm.doc.employee.length) || !frm.doc.employee) {
+						frappe.prompt(
+							{
+								fieldtype: "Table MultiSelect",
+								label: __("Select Employees"),
+								options: "Job Card Time Log",
+								fieldname: "employees",
+								filters: {
+									status: "Active",
+								},
+							},
+							(d) => {
+								frm.events.start_timer(frm, from_time, d.employees);
+							},
+							__("Assign Job to Employee")
+						);
+					} else {
+						frm.events.start_timer(frm, from_time, frm.doc.employee);
+>>>>>>> 21ec4ed911 (fix: show only active employees when starting job card)
 					}
 				);
 			} else {
