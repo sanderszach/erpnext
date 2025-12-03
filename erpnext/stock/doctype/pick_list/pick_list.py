@@ -527,6 +527,47 @@ class PickList(Document):
 				if serial_no:
 					picked_items[row.item_code][key]["serial_no"].extend(serial_no)
 
+<<<<<<< HEAD
+=======
+	def _get_pick_list_items(self, items):
+		pi = frappe.qb.DocType("Pick List")
+		pi_item = frappe.qb.DocType("Pick List Item")
+		query = (
+			frappe.qb.from_(pi)
+			.inner_join(pi_item)
+			.on(pi.name == pi_item.parent)
+			.select(
+				pi_item.item_code,
+				pi_item.warehouse,
+				pi_item.batch_no,
+				pi_item.serial_and_batch_bundle,
+				pi_item.serial_no,
+				(
+					Case()
+					.when(
+						(pi_item.picked_qty > 0) & (pi_item.docstatus == 1),
+						pi_item.picked_qty - pi_item.delivered_qty,
+					)
+					.else_(pi_item.stock_qty)
+				).as_("picked_qty"),
+			)
+			.where(
+				(pi_item.item_code.isin([x.item_code for x in items]))
+				& ((pi_item.picked_qty > 0) | (pi_item.stock_qty > 0))
+				& (pi.status != "Completed")
+				& (pi.status != "Cancelled")
+				& (pi_item.docstatus != 2)
+			)
+		)
+
+		if self.name:
+			query = query.where(pi_item.parent != self.name)
+
+		query = query.for_update()
+
+		return query.run(as_dict=True)
+
+>>>>>>> f5b75b27d7 (fix(picklist): calculate picked qty excluding the delivered qty)
 	def _get_product_bundles(self) -> dict[str, str]:
 		# Dict[so_item_row: item_code]
 		product_bundles = {}
