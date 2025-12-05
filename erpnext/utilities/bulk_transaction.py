@@ -16,16 +16,10 @@ def transaction_processing(data, from_doctype, to_doctype):
 	else:
 		deserialized_data = data
 
-<<<<<<< HEAD
-=======
-	if isinstance(args, str):
-		args = frappe._dict(json.loads(args))
-
 	skipped_records = [d for d in deserialized_data if d.get("status") in ("On Hold", "Closed")]
 
 	deserialized_data = [d for d in deserialized_data if d.get("status") not in ("On Hold", "Closed")]
 
->>>>>>> 31d55248e4 (Merge pull request #50931 from diptanilsaha/gh-49357)
 	length_of_data = len(deserialized_data)
 
 	skipped_msg = ""
