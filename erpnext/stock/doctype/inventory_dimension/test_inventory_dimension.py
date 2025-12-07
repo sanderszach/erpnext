@@ -3,11 +3,7 @@
 
 import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_field
-<<<<<<< HEAD
-from frappe.tests.utils import FrappeTestCase
-=======
-from frappe.tests import IntegrationTestCase, change_settings
->>>>>>> 1e2c56874f (test: validate negative stock with multiple inventory dimensions)
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.utils import nowdate, nowtime
 
 from erpnext.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
