@@ -2532,6 +2532,9 @@ def get_voucher_wise_serial_batch_from_bundle(**kwargs) -> dict[str, dict]:
 		child_row = group_by_voucher[key]
 		if row.serial_no:
 			child_row["serial_nos"].append(row.serial_no)
+			child_row["item_row"].qty = len(child_row["serial_nos"]) * (
+				-1 if row.type_of_transaction == "Outward" else 1
+			)
 
 		if row.batch_no:
 			child_row["batch_nos"][row.batch_no] += row.qty
