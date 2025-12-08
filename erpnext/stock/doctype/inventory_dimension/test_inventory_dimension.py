@@ -526,6 +526,7 @@ class TestInventoryDimension(FrappeTestCase):
 			validate_negative_stock=1,
 		)
 		inv_dimension_2.db_set("validate_negative_stock", 1)
+		frappe.local.inventory_dimensions = {}
 
 		pr_doc = make_purchase_receipt(item_code=item_code, qty=30, do_not_submit=True)
 		pr_doc.items[0].inv_site = "Site 1"
