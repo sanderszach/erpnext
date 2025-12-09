@@ -6,7 +6,7 @@ import frappe
 from frappe import _
 from frappe.model.meta import get_field_precision
 from frappe.query_builder import functions as fn
-from frappe.utils import cstr, flt
+from frappe.utils import flt
 from frappe.utils.nestedset import get_descendants_of
 from frappe.utils.xlsxutils import handle_html
 
@@ -32,6 +32,7 @@ def _execute(filters=None, additional_table_columns=None, additional_conditions=
 	if item_list:
 		itemised_tax, tax_columns = get_tax_accounts(item_list, columns, company_currency)
 
+<<<<<<< HEAD
 		scrubbed_tax_fields = {}
 
 		for tax in tax_columns:
@@ -41,6 +42,9 @@ def _execute(filters=None, additional_table_columns=None, additional_conditions=
 					tax + " Amount": frappe.scrub(tax + " Amount"),
 				}
 			)
+=======
+	itemised_tax, tax_columns = get_tax_accounts(item_list, columns, company_currency)
+>>>>>>> 2767cb04fb (fix: handle duplicate description in item-wise report)
 
 	mode_of_payments = get_mode_of_payments(set(d.parent for d in item_list))
 	so_dn_map = get_delivery_notes_against_sales_order(item_list)
@@ -102,8 +106,13 @@ def _execute(filters=None, additional_table_columns=None, additional_conditions=
 			item_tax = itemised_tax.get(d.name, {}).get(tax, {})
 			row.update(
 				{
+<<<<<<< HEAD
 					scrubbed_tax_fields[tax + " Rate"]: item_tax.get("tax_rate", 0),
 					scrubbed_tax_fields[tax + " Amount"]: item_tax.get("tax_amount", 0),
+=======
+					f"{tax}_rate": details.get("tax_rate", 0),
+					f"{tax}_amount": details.get("tax_amount", 0),
+>>>>>>> 2767cb04fb (fix: handle duplicate description in item-wise report)
 				}
 			)
 			if item_tax.get("is_other_charges"):
@@ -584,6 +593,7 @@ def get_tax_accounts(
 		tuple([doctype, *list(invoice_item_row)]),
 	)
 
+<<<<<<< HEAD
 	account_doctype = frappe.qb.DocType("Account")
 
 	query = (
@@ -664,10 +674,46 @@ def get_tax_accounts(
 
 	tax_columns.sort()
 	for desc in tax_columns:
+=======
+	precision = frappe.get_precision(tax_doctype, "tax_amount", currency=company_currency) or 2
+	tax_columns = {}
+	itemised_tax = {}
+	scrubbed_description_map = {}
+
+	for row in tax_details:
+		description = handle_html(row.description) or row.account_head
+		scrubbed_description = scrubbed_description_map.get(description)
+		if not scrubbed_description:
+			scrubbed_description = frappe.scrub(description)
+			scrubbed_description_map[description] = scrubbed_description
+
+		if scrubbed_description not in tax_columns and row.amount:
+			# as description is text editor earlier and markup can break the column convention in reports
+			tax_columns[scrubbed_description] = description
+
+		rate = "NA" if row.rate == 0 else row.rate
+		itemised_tax.setdefault(row.item_row, {}).setdefault(
+			scrubbed_description,
+			frappe._dict(
+				{
+					"tax_rate": rate,
+					"tax_amount": 0,
+					"is_other_charges": 0 if row.account_type == "Tax" else 1,
+				}
+			),
+		)
+
+		itemised_tax[row.item_row][scrubbed_description].tax_amount += flt(row.amount, precision)
+
+	tax_columns_list = list(tax_columns.keys())
+	tax_columns_list.sort()
+	for scrubbed_desc in tax_columns_list:
+		desc = tax_columns[scrubbed_desc]
+>>>>>>> 2767cb04fb (fix: handle duplicate description in item-wise report)
 		columns.append(
 			{
 				"label": _(desc + " Rate"),
-				"fieldname": frappe.scrub(desc + " Rate"),
+				"fieldname": f"{scrubbed_desc}_rate",
 				"fieldtype": "Float",
 				"width": 100,
 			}
@@ -676,7 +722,7 @@ def get_tax_accounts(
 		columns.append(
 			{
 				"label": _(desc + " Amount"),
-				"fieldname": frappe.scrub(desc + " Amount"),
+				"fieldname": f"{scrubbed_desc}_amount",
 				"fieldtype": "Currency",
 				"options": "currency",
 				"width": 100,
@@ -714,7 +760,7 @@ def get_tax_accounts(
 		},
 	]
 
-	return itemised_tax, tax_columns
+	return itemised_tax, tax_columns_list
 
 
 def add_total_row(
@@ -807,5 +853,5 @@ def add_sub_total_row(item, total_row_map, group_by_value, tax_columns):
 	total_row["percent_gt"] += item["percent_gt"]
 
 	for tax in tax_columns:
-		total_row.setdefault(frappe.scrub(tax + " Amount"), 0.0)
-		total_row[frappe.scrub(tax + " Amount")] += flt(item[frappe.scrub(tax + " Amount")])
+		total_row.setdefault(f"{tax}_amount", 0.0)
+		total_row[f"{tax}_amount"] += flt(item[f"{tax}_amount"])
