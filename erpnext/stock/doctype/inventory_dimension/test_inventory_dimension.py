@@ -504,8 +504,9 @@ class TestInventoryDimension(FrappeTestCase):
 
 		self.assertEqual(site_name, "Site 1")
 
-	@change_settings("Stock Settings", {"allow_negative_stock": 0})
+	
 	def test_validate_negative_stock_with_multiple_dimension(self):
+		frappe.db.set_single_value("Stock Settings", "allow_negative_stock", 0)
 		item_code = "Test Negative Multi Inventory Dimension Item"
 		create_item(item_code)
 
