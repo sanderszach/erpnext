@@ -979,14 +979,14 @@ class WorkOrder(Document):
 
 		for d in self.get("operations"):
 			precision = d.precision("completed_qty")
-			qty = flt(d.completed_qty, precision) + flt(d.process_loss_qty, precision)
+			qty = flt(flt(d.completed_qty, precision) + flt(d.process_loss_qty, precision), precision)
 			if not qty:
 				d.status = "Pending"
-			elif flt(qty) < flt(self.qty):
+			elif qty < flt(self.qty, precision):
 				d.status = "Work in Progress"
-			elif flt(qty) == flt(self.qty):
+			elif qty == flt(self.qty, precision):
 				d.status = "Completed"
-			elif flt(qty) <= max_allowed_qty_for_wo:
+			elif qty <= flt(max_allowed_qty_for_wo, precision):
 				d.status = "Completed"
 			else:
 				frappe.throw(_("Completed Qty cannot be greater than 'Qty to Manufacture'"))
@@ -1372,6 +1372,13 @@ def make_work_order(bom_no, item, qty=0, project=None, variant_items=None, use_m
 		frappe.throw(_("Not permitted"), frappe.PermissionError)
 
 	item_details = get_item_details(item, project)
+
+	if frappe.db.get_value("Item", item, "variant_of"):
+		if variant_bom := frappe.db.get_value(
+			"BOM",
+			{"item": item, "is_default": 1, "docstatus": 1},
+		):
+			bom_no = variant_bom
 
 	wo_doc = frappe.new_doc("Work Order")
 	wo_doc.production_item = item
