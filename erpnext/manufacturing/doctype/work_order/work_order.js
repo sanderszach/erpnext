@@ -335,6 +335,29 @@ frappe.ui.form.on("Work Order", {
 		});
 	},
 
+<<<<<<< HEAD
+=======
+	make_disassembly_order(frm) {
+		erpnext.work_order
+			.show_prompt_for_qty_input(frm, "Disassemble")
+			.then((data) => {
+				if (flt(data.qty) <= 0) {
+					frappe.msgprint(__("Disassemble Qty cannot be less than or equal to <b>0</b>."));
+					return;
+				}
+				return frappe.xcall("erpnext.manufacturing.doctype.work_order.work_order.make_stock_entry", {
+					work_order_id: frm.doc.name,
+					purpose: "Disassemble",
+					qty: data.qty,
+				});
+			})
+			.then((stock_entry) => {
+				frappe.model.sync(stock_entry);
+				frappe.set_route("Form", stock_entry.doctype, stock_entry.name);
+			});
+	},
+
+>>>>>>> 86d6facab3 (fix(manufacturing): add validation for disassemble qty)
 	show_progress_for_items: function (frm) {
 		var bars = [];
 		var message = "";
