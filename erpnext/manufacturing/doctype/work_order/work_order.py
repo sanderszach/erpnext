@@ -1285,8 +1285,17 @@ def make_stock_entry(work_order_id, purpose, qty=None):
 		stock_entry.project = work_order.project
 
 	stock_entry.set_stock_entry_type()
+<<<<<<< HEAD
 	stock_entry.get_items()
 	stock_entry.set_serial_no_batch_for_finished_good()
+=======
+	stock_entry.is_additional_transfer_entry = is_additional_transfer_entry
+	stock_entry.get_items()
+
+	if purpose != "Disassemble":
+		stock_entry.set_serial_no_batch_for_finished_good()
+
+>>>>>>> 99148a2aba (fix(manufacturing): get items for disassembly order)
 	return stock_entry.as_dict()
 
 

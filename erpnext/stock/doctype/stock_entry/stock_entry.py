@@ -1499,11 +1499,86 @@ class StockEntry(StockController):
 					},
 				)
 
+<<<<<<< HEAD
+=======
+	def get_items_for_disassembly(self):
+		"""Get items for Disassembly Order"""
+
+		if not self.work_order:
+			frappe.throw(_("The Work Order is mandatory for Disassembly Order"))
+
+		items = self.get_items_from_manufacture_entry()
+
+		s_warehouse = frappe.db.get_value("Work Order", self.work_order, "fg_warehouse")
+
+		items_dict = get_bom_items_as_dict(
+			self.bom_no,
+			self.company,
+			self.fg_completed_qty,
+			fetch_exploded=self.use_multi_level_bom,
+			fetch_qty_in_stock_uom=False,
+		)
+
+		for row in items:
+			child_row = self.append("items", {})
+			for field, value in row.items():
+				if value is not None:
+					child_row.set(field, value)
+
+			# update qty and amount from BOM items
+			bom_items = items_dict.get(row.item_code)
+			if bom_items:
+				child_row.qty = bom_items.get("qty", child_row.qty)
+				child_row.amount = bom_items.get("amount", child_row.amount)
+
+			if row.is_finished_item:
+				child_row.qty = self.fg_completed_qty
+
+			child_row.s_warehouse = (self.from_warehouse or s_warehouse) if row.is_finished_item else ""
+			child_row.t_warehouse = row.s_warehouse
+			child_row.is_finished_item = 0 if row.is_finished_item else 1
+
+	def get_items_from_manufacture_entry(self):
+		return frappe.get_all(
+			"Stock Entry",
+			fields=[
+				"`tabStock Entry Detail`.`item_code`",
+				"`tabStock Entry Detail`.`item_name`",
+				"`tabStock Entry Detail`.`description`",
+				"`tabStock Entry Detail`.`qty`",
+				"`tabStock Entry Detail`.`transfer_qty`",
+				"`tabStock Entry Detail`.`stock_uom`",
+				"`tabStock Entry Detail`.`uom`",
+				"`tabStock Entry Detail`.`basic_rate`",
+				"`tabStock Entry Detail`.`conversion_factor`",
+				"`tabStock Entry Detail`.`is_finished_item`",
+				"`tabStock Entry Detail`.`batch_no`",
+				"`tabStock Entry Detail`.`serial_no`",
+				"`tabStock Entry Detail`.`s_warehouse`",
+				"`tabStock Entry Detail`.`t_warehouse`",
+				"`tabStock Entry Detail`.`use_serial_batch_fields`",
+			],
+			filters=[
+				["Stock Entry", "purpose", "=", "Manufacture"],
+				["Stock Entry", "work_order", "=", self.work_order],
+				["Stock Entry", "docstatus", "=", 1],
+				["Stock Entry Detail", "docstatus", "=", 1],
+			],
+			order_by="`tabStock Entry Detail`.`idx` desc, `tabStock Entry Detail`.`is_finished_item` desc",
+		)
+
+>>>>>>> 99148a2aba (fix(manufacturing): get items for disassembly order)
 	@frappe.whitelist()
 	def get_items(self):
 		self.set("items", [])
 		self.validate_work_order()
 
+<<<<<<< HEAD
+=======
+		if self.purpose == "Disassemble":
+			return self.get_items_for_disassembly()
+
+>>>>>>> 99148a2aba (fix(manufacturing): get items for disassembly order)
 		if not self.posting_date or not self.posting_time:
 			frappe.throw(_("Posting date and posting time is mandatory"))
 
