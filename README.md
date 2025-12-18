@@ -13,7 +13,6 @@ erpnext-project/
 ```
 
 ## Getting Started
-
 ### Prerequisites
 
 - Node.js >= 18.0.0
