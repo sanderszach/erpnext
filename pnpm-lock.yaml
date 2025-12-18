@@ -1,0 +1,21 @@
+lockfileVersion: '6.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .: {}
+
+  apps/erpnext:
+    dependencies:
+      onscan.js:
+        specifier: ^1.5.2
+        version: 1.5.2
+
+packages:
+
+  /onscan.js@1.5.2:
+    resolution: {integrity: sha512-9oGYy2gXYRjvXO9GYqqVca0VuCTAmWhbmX3egBSBP13rXiMNb+dKPJzKFEeECGqPBpf0m40Zoo+GUQ7eCackdw==}
+    dev: false

@@ -1,18 +1,22 @@
 {
-  "name": "erpnext",
-  "description": "Open Source ERP System powered by the Frappe Framework",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/frappe/erpnext.git"
+  "name": "erpnext-project",
+  "version": "1.0.0",
+  "description": "Monorepo for ERPNext and related applications",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "libs/*"
+  ],
+  "scripts": {
+    "install:all": "pnpm install",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint"
   },
-  "homepage": "https://frappe.io/erpnext",
-  "author": "Frappe Technologies Pvt. Ltd.",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/frappe/erpnext/issues"
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
   },
-  "devDependencies": {},
-  "dependencies": {
-    "onscan.js": "^1.5.2"
-  }
+  "packageManager": "pnpm@8.15.0"
 }
+
