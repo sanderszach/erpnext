@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     openai_api_base: str | None = None
 
+    # ERPNext settings
+    erpnext_url: str | None = None
+    erpnext_api_key: str | None = None
+    erpnext_api_secret: str | None = None
+
     # Future: Add more provider-specific settings as needed
     # anthropic_api_key: str | None = None
     # azure_openai_endpoint: str | None = None

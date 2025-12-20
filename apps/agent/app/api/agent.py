@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.agent.chat import chat_with_agent
 from app.agent.graph import run_agent
 
 router = APIRouter()
@@ -105,4 +106,124 @@ async def agent_status() -> dict[str, str]:
         "status": "ready",
         "message": "Agent control plane is operational",
     }
+
+
+# ============================================================================
+# Chat Endpoint - Interactive conversation with ERPNext tools
+# ============================================================================
+
+
+class ChatMessage(BaseModel):
+    """A single message in the conversation."""
+
+    role: str = Field(..., description="Message role: 'user' or 'assistant'")
+    content: str = Field(..., description="Message content")
+
+
+class ChatRequest(BaseModel):
+    """
+    Request body for the chat endpoint.
+
+    Attributes:
+        message: The user's message.
+        conversation_history: Optional previous messages for context.
+        session_id: Optional session identifier.
+    """
+
+    message: str = Field(..., min_length=1, description="The user's message")
+    conversation_history: list[ChatMessage] | None = Field(
+        default=None,
+        description="Previous messages in the conversation",
+    )
+    session_id: str | None = Field(
+        default=None,
+        description="Optional session ID for tracking",
+    )
+
+
+class ToolCallInfo(BaseModel):
+    """Information about a tool call made by the agent."""
+
+    tool: str
+    args: dict[str, Any]
+    result_preview: str
+
+
+class ChatResponse(BaseModel):
+    """
+    Response from the chat endpoint.
+
+    Attributes:
+        session_id: Session identifier.
+        message: The user's original message.
+        response: The agent's response.
+        tool_calls: List of tools called during processing.
+        error: Whether an error occurred.
+    """
+
+    session_id: str
+    message: str
+    response: str
+    tool_calls: list[ToolCallInfo] = Field(default_factory=list)
+    error: bool = False
+
+
+@router.post("/chat", response_model=ChatResponse)
+async def chat_endpoint(request: ChatRequest) -> ChatResponse:
+    """
+    Chat with the ERPNext agent.
+
+    This endpoint allows conversational interaction with an AI agent that
+    has access to ERPNext tools. The agent can:
+    - Query documents and doctypes
+    - Create and update documents
+    - Run reports
+    - Answer questions about your ERPNext data
+
+    Args:
+        request: The chat request with message and optional history.
+
+    Returns:
+        The agent's response with any tool calls made.
+
+    Example:
+        ```
+        POST /agent/chat
+        {
+            "message": "List all customers"
+        }
+        ```
+    """
+    session_id = request.session_id or str(uuid.uuid4())
+
+    try:
+        # Convert history to dict format
+        history = None
+        if request.conversation_history:
+            history = [
+                {"role": msg.role, "content": msg.content}
+                for msg in request.conversation_history
+            ]
+
+        # Call the chat agent
+        result = await chat_with_agent(
+            message=request.message,
+            conversation_history=history,
+        )
+
+        return ChatResponse(
+            session_id=session_id,
+            message=request.message,
+            response=result.get("response", ""),
+            tool_calls=[
+                ToolCallInfo(**tc) for tc in result.get("tool_calls", [])
+            ],
+            error=result.get("error", False),
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat failed: {str(e)}",
+        ) from e
 
