@@ -10,7 +10,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.agent.chat import chat_with_agent
+from app.agent.chat import chat_with_agent, clear_session, get_session_history
 from app.agent.graph import run_agent
 
 router = APIRouter()
@@ -197,17 +197,18 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
     session_id = request.session_id or str(uuid.uuid4())
 
     try:
-        # Convert history to dict format
+        # Convert history to dict format (only used if no session_id for memory)
         history = None
-        if request.conversation_history:
+        if request.conversation_history and not request.session_id:
             history = [
                 {"role": msg.role, "content": msg.content}
                 for msg in request.conversation_history
             ]
 
-        # Call the chat agent
+        # Call the chat agent with session-based memory
         result = await chat_with_agent(
             message=request.message,
+            session_id=session_id,
             conversation_history=history,
         )
 
@@ -226,4 +227,55 @@ async def chat_endpoint(request: ChatRequest) -> ChatResponse:
             status_code=500,
             detail=f"Chat failed: {str(e)}",
         ) from e
+
+
+# ============================================================================
+# Session Management Endpoints
+# ============================================================================
+
+
+class SessionHistoryResponse(BaseModel):
+    """Response containing session conversation history."""
+
+    session_id: str
+    messages: list[ChatMessage]
+    message_count: int
+
+
+@router.get("/sessions/{session_id}/history", response_model=SessionHistoryResponse)
+async def get_history_endpoint(session_id: str) -> SessionHistoryResponse:
+    """
+    Get conversation history for a session.
+
+    Args:
+        session_id: The session identifier.
+
+    Returns:
+        The conversation history.
+    """
+    history = await get_session_history(session_id)
+    return SessionHistoryResponse(
+        session_id=session_id,
+        messages=[ChatMessage(role=m["role"], content=m["content"]) for m in history],
+        message_count=len(history),
+    )
+
+
+@router.delete("/sessions/{session_id}")
+async def clear_session_endpoint(session_id: str) -> dict[str, Any]:
+    """
+    Clear conversation history for a session.
+
+    Args:
+        session_id: The session to clear.
+
+    Returns:
+        Confirmation of deletion.
+    """
+    deleted = await clear_session(session_id)
+    return {
+        "session_id": session_id,
+        "deleted": deleted,
+        "message": "Session cleared" if deleted else "Session not found",
+    }
 

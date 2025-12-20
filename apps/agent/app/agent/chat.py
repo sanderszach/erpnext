@@ -2,14 +2,15 @@
 Chat agent using LangChain ReAct pattern with tools.
 
 This module provides a simple chat interface that uses an LLM
-with access to ERPNext tools.
+with access to ERPNext tools and conversation memory.
 """
 
 from typing import Any
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_openai import ChatOpenAI
 
+from app.agent.memory import get_memory_store
 from app.config import settings
 from app.tools import get_erpnext_tools
 
@@ -38,14 +39,20 @@ with the user and show them what data will be written."""
 
 async def chat_with_agent(
     message: str,
+    session_id: str | None = None,
     conversation_history: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     """
     Chat with the ERPNext agent.
 
+    Supports two modes:
+    1. Session-based memory: Pass a session_id to automatically persist conversation
+    2. Manual history: Pass conversation_history for stateless operation
+
     Args:
         message: The user's message.
-        conversation_history: Optional list of previous messages.
+        session_id: Optional session ID for automatic memory persistence.
+        conversation_history: Optional list of previous messages (used if no session_id).
 
     Returns:
         Dictionary with the agent's response and metadata.
@@ -74,8 +81,20 @@ async def chat_with_agent(
     # Build message history
     messages: list[Any] = [SystemMessage(content=SYSTEM_PROMPT)]
 
-    # Add conversation history if provided
-    if conversation_history:
+    # Get conversation history from memory or from provided history
+    memory_store = get_memory_store()
+    session = None
+
+    if session_id:
+        # Use session-based memory
+        session = memory_store.get_session(session_id)
+        for msg in session.get_recent_messages(limit=50):
+            if msg.role == "user":
+                messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                messages.append(AIMessage(content=msg.content))
+    elif conversation_history:
+        # Use provided history
         for msg in conversation_history:
             if msg.get("role") == "user":
                 messages.append(HumanMessage(content=msg["content"]))
@@ -84,6 +103,10 @@ async def chat_with_agent(
 
     # Add the current message
     messages.append(HumanMessage(content=message))
+
+    # Save user message to session if using memory
+    if session:
+        session.add_message("user", message)
 
     # Track tool calls made
     tool_calls_made: list[dict[str, Any]] = []
@@ -101,8 +124,14 @@ async def chat_with_agent(
         # Check if we need to call tools
         if not response.tool_calls:
             # No more tool calls, return the final response
+            response_text = response.content
+
+            # Save assistant response to session if using memory
+            if session:
+                session.add_message("assistant", response_text)
+
             return {
-                "response": response.content,
+                "response": response_text,
                 "tool_calls": tool_calls_made,
                 "error": False,
             }
@@ -132,11 +161,10 @@ async def chat_with_agent(
             tool_calls_made.append({
                 "tool": tool_name,
                 "args": tool_args,
-                "result_preview": str(tool_result)[:200] + "..." if len(str(tool_result)) > 200 else str(tool_result),
+                "result_preview": tool_result,
             })
 
             # Add tool result to messages
-            from langchain_core.messages import ToolMessage
             messages.append(
                 ToolMessage(
                     content=str(tool_result),
@@ -145,10 +173,45 @@ async def chat_with_agent(
             )
 
     # If we hit max iterations, return what we have
+    fallback_response = "I've made several tool calls but haven't reached a final answer. Here's what I found so far."
+
+    # Save to session even on fallback
+    if session:
+        session.add_message("assistant", fallback_response)
+
     return {
-        "response": "I've made several tool calls but haven't reached a final answer. Here's what I found so far.",
+        "response": fallback_response,
         "tool_calls": tool_calls_made,
         "error": False,
         "warning": "Max iterations reached",
     }
+
+
+async def clear_session(session_id: str) -> bool:
+    """
+    Clear conversation history for a session.
+
+    Args:
+        session_id: The session to clear.
+
+    Returns:
+        True if session was cleared/deleted.
+    """
+    memory_store = get_memory_store()
+    return memory_store.delete_session(session_id)
+
+
+async def get_session_history(session_id: str) -> list[dict[str, str]]:
+    """
+    Get conversation history for a session.
+
+    Args:
+        session_id: The session ID.
+
+    Returns:
+        List of messages with role and content.
+    """
+    memory_store = get_memory_store()
+    session = memory_store.get_session(session_id)
+    return session.get_messages_for_llm()
 
