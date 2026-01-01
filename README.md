@@ -71,14 +71,14 @@ bench set-config -g redis_cache redis://redis-cache:6379
 bench set-config -g redis_queue redis://redis-queue:6379
 bench set-config -g redis_socketio redis://redis-queue:6379
 
-# Create site
-bench new-site dev.local --admin-password=admin --db-root-password=admin --db-host=db
+# Create site (using localhost so you can access it directly)
+bench new-site localhost --admin-password=admin --db-root-username=root --db-root-password=admin --db-host=db
 
 # Add erpnext to apps.txt
 echo -e 'frappe\nerpnext' > sites/apps.txt
 
 # Install ERPNext on site
-bench --site dev.local install-app erpnext
+bench --site localhost install-app erpnext
 
 # Build assets
 bench build
@@ -143,13 +143,13 @@ bench build
 bench build --watch
 
 # Run migrations
-bench --site dev.local migrate
+bench --site localhost migrate
 
 # Clear cache
-bench --site dev.local clear-cache
+bench --site localhost clear-cache
 
 # Open console
-bench --site dev.local console
+bench --site localhost console
 
 # Create a new custom app
 bench new-app my_custom_app
