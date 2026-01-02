@@ -17,6 +17,7 @@ services:
       - ./frappe-bench:/home/frappe/frappe-bench
       - ./apps/erpnext:/home/frappe/frappe-bench/apps/erpnext
       - ./apps/agent:/home/frappe/frappe-bench/apps/agent
+      - ./apps/erpnext_custom_layout:/home/frappe/frappe-bench/apps/erpnext_custom_layout
     depends_on:
       - db
       - redis-cache
