@@ -42,7 +42,7 @@ docker compose -f docker-compose.dev.yml exec bench bash
 
 # Inside the container - initialize bench
 cd /home/frappe
-bench init temp-bench --frappe-branch develop --skip-redis-config-generation --python python3.14
+bench init temp-bench --frappe-branch v16.0.0-beta.1 --skip-redis-config-generation --python python3.14
 
 # Move runtime files to the mounted directory
 cd /home/frappe
