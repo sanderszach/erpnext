@@ -9,6 +9,7 @@ erpnext-project/
 ├── docker-compose.dev.yml   # Docker services configuration
 ├── apps/
 │   ├── erpnext/             # ERPNext source code (bind-mounted)
+│   ├── erpnext_custom_layout/ # Custom layout overrides (bind-mounted)
 │   └── agent/               # Custom Python app (standalone)
 └── frappe-bench/            # Runtime only (auto-generated, gitignored)
 ```
@@ -62,6 +63,7 @@ uv venv env --seed --python python3.14
 # Install apps
 uv pip install -e apps/frappe --python env/bin/python
 uv pip install -e apps/erpnext --python env/bin/python
+uv pip install -e apps/erpnext_custom_layout --python env/bin/python
 
 # Install npm dependencies for ERPNext
 cd apps/erpnext && yarn install && cd ../..
@@ -74,11 +76,12 @@ bench set-config -g redis_socketio redis://redis-queue:6379
 # Create site (using localhost so you can access it directly)
 bench new-site localhost --admin-password=admin --db-root-username=root --db-root-password=admin --db-host=db
 
-# Add erpnext to apps.txt
-echo -e 'frappe\nerpnext' > sites/apps.txt
+# Add apps to apps.txt
+echo -e 'frappe\nerpnext\nerpnext_custom_layout' > sites/apps.txt
 
-# Install ERPNext on site
+# Install apps on site
 bench --site localhost install-app erpnext
+bench --site localhost install-app erpnext_custom_layout
 
 # Build assets
 bench build
@@ -131,7 +134,23 @@ docker run --rm -v $(pwd):/workspace alpine sh -c "rm -rf /workspace/frappe-benc
 
 - **Python changes**: Auto-reload (Werkzeug dev server watches for changes)
 - **JavaScript/CSS changes**: Run `bench build` or `bench build --watch`
-- Code in `apps/erpnext/` is bind-mounted, so edits on host appear instantly in container
+- Code in `apps/erpnext/` and `apps/erpnext_custom_layout/` is bind-mounted, so edits on host appear instantly in container
+
+## Custom Layout App
+
+The `erpnext_custom_layout` app is used for styling and layout overrides.
+
+### Adding to an existing bench
+
+If you've already initialized your bench, you can add the custom layout app with:
+
+```bash
+docker compose -f docker-compose.dev.yml exec bench bash
+cd /home/frappe/frappe-bench
+uv pip install -e apps/erpnext_custom_layout --python env/bin/python
+bench --site localhost install-app erpnext_custom_layout
+bench build --app erpnext_custom_layout
+```
 
 ## Key Commands (inside container)
 
@@ -190,9 +209,10 @@ docker run --rm -v $(pwd):/workspace alpine sh -c "chown -R 1000:1000 /workspace
 ## Architecture Notes
 
 - `apps/erpnext/` - Treat as upstream source; avoid direct modifications
+- `apps/erpnext_custom_layout/` - Place all your UI/Layout customizations here
 - `apps/agent/` - Standalone Python/FastAPI app (not a Frappe app)
 - `frappe-bench/` - Runtime only; fully regenerated during setup
-- For customizations, create a proper Frappe custom app using `bench new-app`
+- For new features, create a proper Frappe custom app using `bench new-app`
 
 ## License
 
