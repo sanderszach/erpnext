@@ -141,6 +141,7 @@ class SellingController(StockController):
 					lead,
 					posting_date=self.get("transaction_date") or self.get("posting_date"),
 					company=self.company,
+					doctype=self.doctype,
 				)
 			)
 
@@ -524,7 +525,7 @@ class SellingController(StockController):
 			)
 
 			if not self.get("return_against") or (
-				get_valuation_method(d.item_code) == "Moving Average"
+				get_valuation_method(d.item_code, self.company) == "Moving Average"
 				and self.get("is_return")
 				and not item_details.has_serial_no
 				and not item_details.has_batch_no
@@ -535,7 +536,10 @@ class SellingController(StockController):
 				if (
 					not d.incoming_rate
 					or self.is_internal_transfer()
-					or (get_valuation_method(d.item_code) == "Moving Average" and self.get("is_return"))
+					or (
+						get_valuation_method(d.item_code, self.company) == "Moving Average"
+						and self.get("is_return")
+					)
 				):
 					d.incoming_rate = get_incoming_rate(
 						{
@@ -560,7 +564,7 @@ class SellingController(StockController):
 					not d.incoming_rate
 					and self.get("return_against")
 					and self.get("is_return")
-					and get_valuation_method(d.item_code) == "Moving Average"
+					and get_valuation_method(d.item_code, self.company) == "Moving Average"
 				):
 					d.incoming_rate = get_rate_for_return(
 						self.doctype, self.name, d.item_code, self.return_against, item_row=d
