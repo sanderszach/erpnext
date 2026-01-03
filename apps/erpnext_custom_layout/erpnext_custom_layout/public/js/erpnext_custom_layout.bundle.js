@@ -1,0 +1,275 @@
+frappe.provide('frappe.ui');
+
+frappe.ui.NexERPSidebar = class {
+    constructor() {
+        console.log("NexERPSidebar: Initializing...");
+        this.setup();
+    }
+
+    setup() {
+        this.make_dom();
+        this.render();
+        this.bind_events();
+    }
+
+    make_dom() {
+        this.$sidebar = $('.body-sidebar, .layout-side-section').first();
+        if (!this.$sidebar.length) return;
+
+        this.$sidebar.find('.nexerp-sidebar-wrapper').remove();
+        this.$wrapper = $('<div class="nexerp-sidebar-wrapper">').appendTo(this.$sidebar);
+
+        if (!$('.nexerp-modal-overlay').length) {
+            this.make_modules_modal();
+        }
+
+        this.update_header();
+    }
+
+    update_header() {
+        const $header = $('.sidebar-header');
+        if ($header.length) {
+            $header.off('click'); // Disable Frappe's default dropdown toggle
+            $header.html(`
+                <a href="/desk/home" class="nexerp-header-link">
+                    <span class="lighting-logo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </span>
+                    <span class="erp-text">ERP</span>
+                </a>
+            `);
+
+            // Prevent any parent click handlers from triggering the dropdown
+            $header.find('.nexerp-header-link').on('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+    }
+
+    get_current_workspace() {
+        const route = frappe.get_route();
+        if (route[0] === 'Workspaces' && route[1]) {
+            return route[1];
+        }
+        return frappe.app.sidebar ? frappe.app.sidebar.workspace_title : 'Home';
+    }
+
+    get_sidebar_items() {
+        const workspace = this.get_current_workspace();
+        if (!workspace) return [];
+
+        const sidebar_data = frappe.boot.workspace_sidebar_item[workspace.toLowerCase()];
+        console.log('my sidebar data',sidebar_data);
+        return sidebar_data ? sidebar_data.items : [];
+    }
+
+    slugify(text) {
+        if (!text) return "";
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')           // Replace spaces with -
+            .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+            .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+            .replace(/^-+/, '')             // Trim - from start of text
+            .replace(/-+$/, '');            // Trim - from end of text
+    }
+
+    make_modules_modal() {
+        const modules = [
+            { label: "Payables", route: "payables", icon: "arrow-left" },
+            { label: "Receivables", route: "receivables", icon: "arrow-right" },
+            { label: "Accounting", route: "accounting", icon: "bill" },
+            { label: "Opening & Closing", route: "opening-closing", icon: "list" },
+            { label: "Taxes", route: "taxes", icon: "list" },
+            { label: "Budget", route: "budget", icon: "bill" },
+            { label: "Banking", route: "banking", icon: "list" },
+            { label: "Subscription", route: "subscription", icon: "bill" },
+            { label: "Reports", route: "financial-reports", icon: "file-text" },
+            { label: "Buying", route: "buying", icon: "shopping-cart" },
+            { label: "Selling", route: "selling", icon: "tag" },
+            { label: "Stock", route: "stock", icon: "package" },
+            { label: "Assets", route: "assets", icon: "box" },
+            { label: "Projects", route: "projects", icon: "briefcase" },
+            { label: "CRM", route: "crm", icon: "users" },
+            { label: "Support", route: "support", icon: "life-buoy" },
+            { label: "Manufacturing", route: "manufacturing", icon: "settings" },
+            { label: "Quality", route: "quality", icon: "check-circle" },
+            { label: "Website", route: "website", icon: "globe" },
+            { label: "Integrations", route: "integrations", icon: "layers" },
+            { label: "Users", route: "users", icon: "user" },
+            { label: "Settings", route: "settings", icon: "sliders" },
+            { label: "Home", route: "home", icon: "home" }
+        ];
+
+        // Sort modules alphabetically by label
+        modules.sort((a, b) => a.label.localeCompare(b.label));
+
+        const grid_items_html = modules.map(m => `
+            <div class="module-grid-item" data-route="/desk/${this.slugify(m.route)}/">
+                <div class="module-icon-wrapper">
+                    ${frappe.utils.icon(m.icon, "sm")}
+                </div>
+                <div class="module-label">${m.label}</div>
+            </div>
+        `).join('');
+
+        const modal_html = `
+            <div class="nexerp-modal-overlay">
+                <div class="nexerp-modules-modal">
+                    <div class="modal-close">
+                        ${frappe.utils.icon("close", "xs")}
+                    </div>
+                    <div class="modules-grid">
+                        ${grid_items_html}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        $('body').append(modal_html);
+
+        $('.nexerp-modal-overlay, .modal-close').on('click', (e) => {
+            if (e.target === e.currentTarget || $(e.currentTarget).hasClass('modal-close')) {
+                $('.nexerp-modal-overlay').removeClass('show');
+            }
+        });
+
+        $('.module-grid-item').on('click', (e) => {
+            const url = $(e.currentTarget).data('route');
+            if (url) {
+                window.location.href = url;
+                $('.nexerp-modal-overlay').removeClass('show');
+            }
+        });
+    }
+
+    render() {
+        if (!this.$wrapper) return;
+
+        this.update_header();
+
+        const workspace = this.get_current_workspace();
+        const items = this.get_sidebar_items();
+
+        const context_items_html = items
+            .filter(item => item.type !== 'Section Break' && item.hidden !== 1)
+            .map(item => {
+                const has_children = item.child_items && item.child_items.length > 0;
+            const target_url = `/desk/${this.slugify(item.link_to || item.label)}`;
+            
+            return `
+                <div class="nexerp-menu-item context-item" data-url="${target_url}">
+                    <div class="item-left">
+                        <span class="item-icon">${frappe.utils.icon(item.icon || 'file-text', 'sm')}</span>
+                        <span class="item-label">${item.label}</span>
+                    </div>
+                    ${has_children ? `
+                        <div class="chevron">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"></path>
+                            </svg>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+
+        this.$wrapper.html(`
+            <div class="nexerp-sidebar-section">
+                <div class="nexerp-menu-item" id="modules-toggle">
+                    <div class="item-left">
+                        <span class="item-icon">${frappe.utils.icon('grid', 'sm')}</span>
+                        <span class="item-label">MODULES</span>
+                    </div>
+                    <div class="chevron">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 18l6-6-6-6"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nexerp-sidebar-section">
+                <div class="section-title">FAVORITES</div>
+                <div class="nexerp-favorites-list">
+                    <div class="nexerp-menu-item">
+                        <div class="item-left">
+                            <span class="star-icon">★</span>
+                            Sales Dashboard
+                        </div>
+                    </div>
+                    <div class="nexerp-menu-item">
+                        <div class="item-left">
+                            <span class="star-icon">★</span>
+                            Monthly P&L
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nexerp-sidebar-section nexerp-context-section">
+                <div class="section-title">${workspace.toUpperCase()}</div>
+                <div class="context-items-list">
+                    ${context_items_html}
+                </div>
+            </div>
+
+            <div class="nexerp-sidebar-section recent-section" style="margin-top: auto;">
+                <div class="section-title">RECENT</div>
+                <div class="nexerp-recent-card">
+                    <div class="card-title">Stock Update #9920</div>
+                    <div class="card-meta">2 mins ago</div>
+                </div>
+                <div class="nexerp-recent-simple">Q3 Projection Draft</div>
+            </div>
+        `);
+    }
+
+    bind_events() {
+        $('#modules-toggle').on('click', () => {
+            $('.nexerp-modal-overlay').addClass('show');
+        });
+
+        this.$wrapper.on('click', '.context-item', (e) => {
+            const url = $(e.currentTarget).data('url');
+            if (url) {
+                window.location.href = url;
+            }
+        });
+    }
+};
+
+function init_nexerp_sidebar() {
+    if (!$('.nexerp-sidebar-wrapper').length) {
+        new frappe.ui.NexERPSidebar();
+    } else {
+        new frappe.ui.NexERPSidebar();
+    }
+}
+
+$(document).ready(() => {
+    setTimeout(init_nexerp_sidebar, 1000);
+});
+
+$(document).on('app_ready page-change', function() {
+    setTimeout(init_nexerp_sidebar, 100);
+});
+
+if (frappe.ui.Sidebar) {
+    const old_make_sidebar = frappe.ui.Sidebar.prototype.make_sidebar;
+    frappe.ui.Sidebar.prototype.make_sidebar = function() {
+        old_make_sidebar.apply(this, arguments);
+        init_nexerp_sidebar();
+    };
+}
+
+const observer = new MutationObserver((mutations) => {
+    for (let mutation of mutations) {
+        if (mutation.addedNodes.length && $('.body-sidebar').length && !$('.nexerp-sidebar-wrapper').length) {
+            init_nexerp_sidebar();
+        }
+    }
+});
+
+observer.observe(document.body, { childList: true, subtree: true });
