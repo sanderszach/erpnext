@@ -306,3 +306,107 @@
         max-width: 80px;
     }
 }
+
+// Page Header and Breadcrumbs
+.page-head {
+    height: auto !important;
+    min-height: 60px;
+    padding: 10px 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    
+    .page-head-content {
+        height: auto !important;
+    }
+}
+
+.custom-breadcrumbs-wrapper {
+    width: 100%;
+    margin-bottom: 4px;
+
+    .custom-breadcrumbs {
+        display: flex;
+        align-items: center;
+        list-style: none;
+        padding: 0;
+        margin: 0 !important;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--nexerp-text-muted);
+        
+        li {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            
+            a {
+                color: var(--nexerp-text-muted) !important;
+                text-decoration: none !important;
+                transition: color 0.2s;
+                
+                &:hover {
+                    color: var(--nexerp-text-primary) !important;
+                }
+            }
+            
+            &::after {
+                content: '/';
+                margin: 0 8px;
+                color: var(--nexerp-text-muted);
+                font-weight: 300;
+            }
+            
+            &:last-child::after {
+                display: none;
+            }
+
+            &.disabled {
+                a {
+                    cursor: default;
+                    pointer-events: none;
+                }
+            }
+        }
+    }
+}
+
+.page-title {
+    display: flex !important;
+    align-items: center !important;
+    flex: 1;
+
+    .title-area {
+        margin: 0 !important;
+        
+        .title-text {
+            font-size: 18px !important;
+            font-weight: 700 !important;
+            color: var(--nexerp-text-primary) !important;
+            line-height: 1.2;
+        }
+    }
+}
+
+.sidebar-toggle-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px; // Match standard page action margins
+    padding: 4px;
+    border-radius: 4px;
+    
+    &:hover { 
+        background: var(--nexerp-hover); 
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+        color: var(--nexerp-text-secondary);
+    }
+}
+
+// Hide default breadcrumbs
+#navbar-breadcrumbs {
+    display: none !important;
+}

@@ -10,6 +10,43 @@ frappe.ui.NexERPSidebar = class {
         this.make_dom();
         this.render();
         this.bind_events();
+        this.setup_breadcrumbs();
+        this.move_sidebar_toggle();
+    }
+
+    move_sidebar_toggle() {
+        const $toggle = $('.sidebar-toggle-btn');
+        const $page_actions = $('.page-actions');
+        if ($toggle.length && $page_actions.length && !$toggle.parent().hasClass('page-actions')) {
+            $toggle.appendTo($page_actions);
+        }
+    }
+
+    setup_breadcrumbs() {
+        if (frappe.breadcrumbs && !frappe.breadcrumbs._custom_overridden) {
+            const me = this;
+            const old_clear = frappe.breadcrumbs.clear;
+            
+            frappe.breadcrumbs.clear = function() {
+                const $page_head = $('.page-head:visible');
+                if ($page_head.length) {
+                    let $custom = $page_head.find('.custom-breadcrumbs');
+                    if (!$custom.length) {
+                        const $wrapper = $('<div class="custom-breadcrumbs-wrapper"><div class="container"><ul class="custom-breadcrumbs"></ul></div></div>').prependTo($page_head);
+                        $custom = $wrapper.find('.custom-breadcrumbs');
+                    }
+                    this.$breadcrumbs = $custom.empty();
+                } else {
+                    old_clear.apply(this, arguments);
+                }
+            };
+            frappe.breadcrumbs._custom_overridden = true;
+        }
+        
+        // Initial update
+        if (frappe.breadcrumbs) {
+            frappe.breadcrumbs.update();
+        }
     }
 
     make_dom() {
@@ -241,11 +278,8 @@ frappe.ui.NexERPSidebar = class {
 };
 
 function init_nexerp_sidebar() {
-    if (!$('.nexerp-sidebar-wrapper').length) {
-        new frappe.ui.NexERPSidebar();
-    } else {
-        new frappe.ui.NexERPSidebar();
-    }
+    const sidebar = new frappe.ui.NexERPSidebar();
+    sidebar.move_sidebar_toggle();
 }
 
 $(document).ready(() => {
