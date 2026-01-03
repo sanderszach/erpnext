@@ -102,7 +102,7 @@ LOG_LEVEL=INFO
 
 ```bash
 # Development mode with auto-reload
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8001
 
 # Or directly
 python -m uvicorn app.main:app --reload --port 8000
