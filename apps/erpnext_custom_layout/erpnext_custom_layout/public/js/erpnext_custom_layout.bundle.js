@@ -87,10 +87,10 @@ frappe.ui.NexERPSidebar = class {
 
     get_current_workspace() {
         const route = frappe.get_route();
-        if (route[0] === 'Workspaces' && route[1]) {
+        if (route && route[0] === 'Workspaces' && route[1]) {
             return route[1];
         }
-        return frappe.app.sidebar ? frappe.app.sidebar.workspace_title : 'Home';
+        return (frappe.app.sidebar ? frappe.app.sidebar.workspace_title : 'Home') || 'Home';
     }
 
     get_sidebar_items() {
@@ -98,7 +98,6 @@ frappe.ui.NexERPSidebar = class {
         if (!workspace) return [];
 
         const sidebar_data = frappe.boot.workspace_sidebar_item[workspace.toLowerCase()];
-        console.log('my sidebar data',sidebar_data);
         return sidebar_data ? sidebar_data.items : [];
     }
 
@@ -246,7 +245,7 @@ frappe.ui.NexERPSidebar = class {
             </div>
 
             <div class="nexerp-sidebar-section nexerp-context-section">
-                <div class="section-title">${workspace.toUpperCase()}</div>
+                <div class="section-title">${(workspace || "").toUpperCase()}</div>
                 <div class="context-items-list">
                     ${context_items_html}
                 </div>
@@ -339,6 +338,22 @@ if (frappe.search && frappe.search.AwesomeBar) {
     };
 }
 
+// Module Federation Loader
+frappe.ui.load_microfrontend = async function(scope, module, url) {
+    if (!window[scope]) {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+        await window[scope].init(__webpack_share_scopes__.default);
+    }
+    const factory = await window[scope].get(module);
+    return factory();
+};
+
 // Chat Dialog Implementation
 frappe.ui.make_chat_dialog = function(initial_message) {
     const dialog = new frappe.ui.Dialog({
@@ -351,16 +366,19 @@ frappe.ui.make_chat_dialog = function(initial_message) {
         ],
     });
 
+    // Add custom class for styling
+    dialog.$wrapper.addClass('chat-modal');
+
     dialog.fields_dict.chat_html.$wrapper.html(`
-        <div class="chat-container" style="height: 400px; display: flex; flex-direction: column;">
-            <div class="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; border: 1px solid var(--nexerp-border); border-radius: 8px; margin-bottom: 15px; background: var(--nexerp-bg);">
+        <div class="chat-container">
+            <div class="chat-messages">
                 <div class="message chat-placeholder" style="color: var(--nexerp-text-muted); text-align: center; margin-top: 150px;">
                     <em>Start a conversation with the ERP Agent...</em>
                 </div>
             </div>
-            <div class="input-group" style="display: flex; gap: 10px;">
-                <input type="text" class="form-control chat-input" placeholder="Type your message..." style="background: var(--nexerp-hover); border: 1px solid var(--nexerp-border); color: var(--nexerp-text-primary);">
-                <button class="btn btn-primary send-btn" type="button" style="background: var(--nexerp-accent-blue); border: none;">Send</button>
+            <div class="chat-input-group">
+                <input type="text" class="form-control chat-input" placeholder="Type your message...">
+                <button class="btn btn-primary send-btn" type="button">Send</button>
             </div>
         </div>
     `);
@@ -369,35 +387,69 @@ frappe.ui.make_chat_dialog = function(initial_message) {
     const $input = dialog.fields_dict.chat_html.$wrapper.find('.chat-input');
     const $send_btn = dialog.fields_dict.chat_html.$wrapper.find('.send-btn');
 
+    // Persistent session ID for the chat session
+    const session_id = frappe.boot.user_session_id || "e3dae729dcb41a119009f891495df28648c1a6fd97a0088422dc96d1";
+
     function append_message(sender, text) {
         const is_user = sender === 'User';
+        const formatted_text = is_user ? text : (window.frappe.markdown ? window.frappe.markdown(text) : text);
+        
         const msgHtml = `
-            <div class="message" style="margin-bottom: 15px; display: flex; flex-direction: column; align-items: ${is_user ? 'flex-end' : 'flex-start'};">
+            <div class="message" style="display: flex; flex-direction: column; align-items: ${is_user ? 'flex-end' : 'flex-start'};">
                 <div style="font-weight: 700; font-size: 10px; margin-bottom: 4px; color: var(--nexerp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">${__(sender)}</div>
-                <div style="font-size: 14px; padding: 10px 14px; border-radius: 12px; max-width: 85%; background: ${is_user ? 'var(--nexerp-accent-blue)' : 'var(--nexerp-hover)'}; color: #fff; border: 1px solid var(--nexerp-border);">
-                    ${text}
+                <div style="font-size: 14px; padding: 10px 14px; border-radius: 12px; max-width: 85%; background: ${is_user ? 'var(--nexerp-accent-blue)' : 'var(--nexerp-hover)'}; color: #fff; border: 1px solid var(--nexerp-border); word-break: break-word;">
+                    ${formatted_text}
                 </div>
             </div>
         `;
         $messages.append(msgHtml);
-        $messages.scrollTop($messages[0].scrollHeight);
+        
+        // Ensure scrolling to bottom
+        setTimeout(() => {
+            $messages.scrollTop($messages[0].scrollHeight);
+        }, 100);
+        
         $messages.find('.chat-placeholder').remove();
     }
 
-    function handle_send() {
-        const message = $input.val();
+    async function handle_send(message_text) {
+        const message = message_text || $input.val();
         if (message) {
-            append_message('User', message);
-            $input.val('');
+            if (!message_text) {
+                append_message('User', message);
+                $input.val('');
+            }
             
-            // Simulate agent response
+            const $typing = $(`<div class="typing-indicator" style="color: var(--nexerp-text-muted); font-size: 12px; margin-bottom: 15px;">Agent is typing...</div>`);
+            $messages.append($typing);
             setTimeout(() => {
-                append_message('Agent', 'I received your message: ' + message);
-            }, 1000);
+                $messages.scrollTop($messages[0].scrollHeight);
+            }, 50);
+
+            try {
+                const response = await fetch('http://localhost:8001/agent/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message, session_id: session_id })
+                });
+
+                const data = await response.json();
+                $typing.remove();
+
+                if (data && (data.response || data.message)) {
+                    append_message('Agent', data.response || data.message);
+                } else {
+                    append_message('Agent', "Sorry, I couldn't process that request.");
+                }
+            } catch (error) {
+                $typing.remove();
+                console.error('Chat Agent Error:', error);
+                append_message('Agent', "Error connecting to the chat agent. Please make sure it's running on port 8001.");
+            }
         }
     }
 
-    $send_btn.on('click', handle_send);
+    $send_btn.on('click', () => handle_send());
     $input.on('keypress', function(e) {
         if (e.which == 13) {
             handle_send();
@@ -406,11 +458,29 @@ frappe.ui.make_chat_dialog = function(initial_message) {
 
     dialog.show();
 
+    // Brute-force styles to ensure the modal takes full height and is scrollable
+    const $modal_body = dialog.$wrapper.find('.modal-body');
+    $modal_body.css({
+        'display': 'flex',
+        'flex-direction': 'column',
+        'height': '100%',
+        'overflow': 'hidden',
+        'min-height': '0'
+    });
+
+    // Force all parents of the chat container to expand
+    $modal_body.find('.form-layout, .form-page, .form-section, .section-body, .form-column, .frappe-control, .form-group').css({
+        'display': 'flex',
+        'flex-direction': 'column',
+        'flex': '1 1 auto',
+        'height': '100%',
+        'min-height': '0',
+        'margin': '0',
+        'padding': '0'
+    });
+
     if (initial_message) {
         append_message('User', initial_message);
-        // Simulate agent response for initial message
-        setTimeout(() => {
-            append_message('Agent', 'I received your message: ' + initial_message);
-        }, 1000);
+        handle_send(initial_message);
     }
 };
