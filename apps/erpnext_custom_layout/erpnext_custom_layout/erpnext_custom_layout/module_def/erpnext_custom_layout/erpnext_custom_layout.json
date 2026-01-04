@@ -1,0 +1,14 @@
+{
+ "app_name": "erpnext_custom_layout",
+ "creation": "2024-01-03 12:00:00.000000",
+ "docstatus": 0,
+ "doctype": "Module Def",
+ "modified": "2024-01-03 12:00:00.000000",
+ "module_name": "ERPNext Custom Layout",
+ "name": "ERPNext Custom Layout",
+ "owner": "Administrator",
+ "package": "ERPNext Custom Layout",
+ "standard": "Yes"
+}
+
+

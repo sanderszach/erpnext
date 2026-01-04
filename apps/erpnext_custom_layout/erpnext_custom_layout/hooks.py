@@ -11,3 +11,7 @@ app_license = "MIT"
 # include js, css files in header of desk.html
 app_include_css = "erpnext_custom_layout.bundle.css"
 app_include_js = "erpnext_custom_layout.bundle.js"
+
+website_route_rules = [
+    {"from_route": "/desk/chat", "to_route": "chat"},
+]
