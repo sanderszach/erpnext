@@ -320,6 +320,55 @@
     }
 }
 
+// Navbar and Search Bar Enhancements
+.navbar {
+    .container {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        max-width: 100% !important;
+        padding: 0 30px !important;
+    }
+
+    .navbar-collapse {
+        flex: 1 !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    form[role="search"] {
+        width: 100% !important;
+        max-width: 450px !important; // Reduced width
+        margin: 0 auto !important;
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    .search-bar {
+        width: 100% !important;
+        background: var(--nexerp-hover) !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--nexerp-border) !important;
+        max-width: 450px !important;
+        
+        #navbar-search {
+            background: transparent !important;
+            color: var(--nexerp-text-primary) !important;
+            border: none !important;
+            padding: 10px 15px !important;
+            font-size: 14px !important;
+            
+            &::placeholder {
+                color: var(--nexerp-text-muted) !important;
+            }
+        }
+
+        .search-icon {
+            display: none !important; // Removed magnifying glass
+        }
+    }
+}
+
 .custom-breadcrumbs-wrapper {
     width: 100%;
     margin-bottom: 4px;

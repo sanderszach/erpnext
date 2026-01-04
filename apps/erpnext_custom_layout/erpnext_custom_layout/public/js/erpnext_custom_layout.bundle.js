@@ -280,6 +280,12 @@ frappe.ui.NexERPSidebar = class {
 function init_nexerp_sidebar() {
     const sidebar = new frappe.ui.NexERPSidebar();
     sidebar.move_sidebar_toggle();
+    
+    // Update Search Bar Placeholder
+    const search_input = $('#navbar-search');
+    if (search_input.length) {
+        search_input.attr('placeholder', __('Search or Chat'));
+    }
 }
 
 $(document).ready(() => {
@@ -307,3 +313,104 @@ const observer = new MutationObserver((mutations) => {
 });
 
 observer.observe(document.body, { childList: true, subtree: true });
+
+// Override AwesomeBar to change "Search for" to "Begin chat"
+if (frappe.search && frappe.search.AwesomeBar) {
+    frappe.search.AwesomeBar.prototype.make_global_search = function(txt) {
+        if (txt.charAt(0) === "#") {
+            return;
+        }
+
+        this.options.push({
+            label: `
+                <span class="flex justify-between text-medium">
+                    <span class="ellipsis">${__("Begin chat {0}", [frappe.utils.xss_sanitise(txt).bold()])}</span>
+                    <kbd>↵</kbd>
+                </span>
+            `,
+            value: __("Begin chat {0}", [frappe.utils.xss_sanitise(txt)]),
+            match: txt,
+            index: 100,
+            default: "Search",
+            onclick: function () {
+                frappe.ui.make_chat_dialog(txt);
+            },
+        });
+    };
+}
+
+// Chat Dialog Implementation
+frappe.ui.make_chat_dialog = function(initial_message) {
+    const dialog = new frappe.ui.Dialog({
+        title: __('Chat with ERP Agent'),
+        fields: [
+            {
+                fieldtype: 'HTML',
+                fieldname: 'chat_html'
+            }
+        ],
+    });
+
+    dialog.fields_dict.chat_html.$wrapper.html(`
+        <div class="chat-container" style="height: 400px; display: flex; flex-direction: column;">
+            <div class="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; border: 1px solid var(--nexerp-border); border-radius: 8px; margin-bottom: 15px; background: var(--nexerp-bg);">
+                <div class="message chat-placeholder" style="color: var(--nexerp-text-muted); text-align: center; margin-top: 150px;">
+                    <em>Start a conversation with the ERP Agent...</em>
+                </div>
+            </div>
+            <div class="input-group" style="display: flex; gap: 10px;">
+                <input type="text" class="form-control chat-input" placeholder="Type your message..." style="background: var(--nexerp-hover); border: 1px solid var(--nexerp-border); color: var(--nexerp-text-primary);">
+                <button class="btn btn-primary send-btn" type="button" style="background: var(--nexerp-accent-blue); border: none;">Send</button>
+            </div>
+        </div>
+    `);
+
+    const $messages = dialog.fields_dict.chat_html.$wrapper.find('.chat-messages');
+    const $input = dialog.fields_dict.chat_html.$wrapper.find('.chat-input');
+    const $send_btn = dialog.fields_dict.chat_html.$wrapper.find('.send-btn');
+
+    function append_message(sender, text) {
+        const is_user = sender === 'User';
+        const msgHtml = `
+            <div class="message" style="margin-bottom: 15px; display: flex; flex-direction: column; align-items: ${is_user ? 'flex-end' : 'flex-start'};">
+                <div style="font-weight: 700; font-size: 10px; margin-bottom: 4px; color: var(--nexerp-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">${__(sender)}</div>
+                <div style="font-size: 14px; padding: 10px 14px; border-radius: 12px; max-width: 85%; background: ${is_user ? 'var(--nexerp-accent-blue)' : 'var(--nexerp-hover)'}; color: #fff; border: 1px solid var(--nexerp-border);">
+                    ${text}
+                </div>
+            </div>
+        `;
+        $messages.append(msgHtml);
+        $messages.scrollTop($messages[0].scrollHeight);
+        $messages.find('.chat-placeholder').remove();
+    }
+
+    function handle_send() {
+        const message = $input.val();
+        if (message) {
+            append_message('User', message);
+            $input.val('');
+            
+            // Simulate agent response
+            setTimeout(() => {
+                append_message('Agent', 'I received your message: ' + message);
+            }, 1000);
+        }
+    }
+
+    $send_btn.on('click', handle_send);
+    $input.on('keypress', function(e) {
+        if (e.which == 13) {
+            handle_send();
+        }
+    });
+
+    dialog.show();
+
+    if (initial_message) {
+        append_message('User', initial_message);
+        // Simulate agent response for initial message
+        setTimeout(() => {
+            append_message('Agent', 'I received your message: ' + initial_message);
+        }, 1000);
+    }
+};
