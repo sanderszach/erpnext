@@ -1,7 +1,9 @@
 frappe.pages['chat'].on_page_load = function(wrapper) {
 	var page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: 'Chat'
+		title: 'Chat',
+		single_column: true,
+		disable_sidebar_toggle: true,
 	});
 
 	const container = $('<div id="chat-ui-root" style="width: 100%; height: 100%; min-height: 500px;"></div>').appendTo(page.main);
@@ -17,6 +19,8 @@ frappe.pages['chat'].on_page_load = function(wrapper) {
 			const remoteUrl = 'http://localhost:3005/remoteEntry.js';
 			const scope = 'chat_ui';
 			const renderModule = './render';
+
+			console.log('Loading chat UI from:', remoteUrl);
 
 			if (!window[scope]) {
 				const script = document.createElement('script');

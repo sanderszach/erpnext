@@ -576,3 +576,9 @@
 #navbar-breadcrumbs {
     display: none !important;
 }
+
+// Chat page specific styles
+#chat-ui-root {
+    display: flex !important;
+    justify-content: center !important;
+}

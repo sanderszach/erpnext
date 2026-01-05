@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { 
   Box, 
   Flex, 
@@ -12,27 +12,43 @@ import {
   ChakraProvider,
   defaultSystem,
   createSystem,
-  defaultConfig
+  defaultConfig,
+  Spinner
 } from '@chakra-ui/react';
 import { Send, User, Bot, Sparkles } from 'lucide-react';
+
+// Agent API configuration
+const AGENT_API_URL = 'http://localhost:8001';
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'agent';
   timestamp: Date;
+  isLoading?: boolean;
+  toolCalls?: { tool: string; args: Record<string, unknown>; result_preview: string }[];
+}
+
+interface ChatApiResponse {
+  session_id: string;
+  message: string;
+  response: string;
+  tool_calls: { tool: string; args: Record<string, unknown>; result_preview: string }[];
+  error: boolean;
 }
 
 export function ChatContent() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hello! I'm your ERP Assistant. How can I help you today?",
+      text: "Hello! I'm your ERP Assistant. I can help you query and manage your ERPNext data. What would you like to do?",
       sender: 'agent',
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -43,8 +59,28 @@ export function ChatContent() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!inputValue.trim()) return;
+  const sendMessageToAgent = useCallback(async (message: string): Promise<ChatApiResponse> => {
+    const response = await fetch(`${AGENT_API_URL}/agent/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message,
+        session_id: sessionId,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `Request failed with status ${response.status}`);
+    }
+
+    return response.json();
+  }, [sessionId]);
+
+  const handleSend = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -53,19 +89,49 @@ export function ChatContent() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
+    const loadingMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      text: '',
+      sender: 'agent',
+      timestamp: new Date(),
+      isLoading: true,
+    };
 
-    // Simulate agent response
-    setTimeout(() => {
+    setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    setInputValue('');
+    setIsLoading(true);
+
+    try {
+      const result = await sendMessageToAgent(inputValue);
+      
+      // Store session ID for conversation continuity
+      if (result.session_id) {
+        setSessionId(result.session_id);
+      }
+
       const agentMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "I'm processing your request. This is a simulated response from the microfrontend.",
+        id: (Date.now() + 2).toString(),
+        text: result.response,
+        sender: 'agent',
+        timestamp: new Date(),
+        toolCalls: result.tool_calls,
+      };
+
+      // Replace loading message with actual response
+      setMessages((prev) => prev.slice(0, -1).concat(agentMessage));
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        text: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         sender: 'agent',
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, agentMessage]);
-    }, 1000);
+
+      // Replace loading message with error
+      setMessages((prev) => prev.slice(0, -1).concat(errorMessage));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -130,10 +196,29 @@ export function ChatContent() {
                 roundedTopLeft={msg.sender === 'agent' ? '4px' : '2xl'}
                 shadow="sm"
               >
-                <Text fontSize="sm" lineHeight="tall">{msg.text}</Text>
-                <Text fontSize="10px" mt={1} opacity={0.6} textAlign={msg.sender === 'user' ? 'right' : 'left'}>
-                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
+                {msg.isLoading ? (
+                  <HStack gap={2}>
+                    <Spinner size="sm" color="blue.500" />
+                    <Text fontSize="sm" color="gray.500">Thinking...</Text>
+                  </HStack>
+                ) : (
+                  <>
+                    <Text fontSize="sm" lineHeight="tall" whiteSpace="pre-wrap">{msg.text}</Text>
+                    {msg.toolCalls && msg.toolCalls.length > 0 && (
+                      <Box mt={2} pt={2} borderTop="1px solid" borderColor="gray.200">
+                        <Text fontSize="xs" color="gray.500" mb={1}>Tools used:</Text>
+                        {msg.toolCalls.map((tc, idx) => (
+                          <Text key={idx} fontSize="xs" color="gray.400">
+                            • {tc.tool}
+                          </Text>
+                        ))}
+                      </Box>
+                    )}
+                    <Text fontSize="10px" mt={1} opacity={0.6} textAlign={msg.sender === 'user' ? 'right' : 'left'}>
+                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </>
+                )}
               </Box>
             </Flex>
           ))}
