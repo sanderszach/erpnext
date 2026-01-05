@@ -1,4 +1,7 @@
 packages:
-  - 'apps/*'
+  - 'apps/chat-ui'
+  - 'apps/agent'
   - 'libs/*'
+  # Note: apps/erpnext and apps/erpnext_custom_layout are excluded
+  # as they are built inside Docker with Frappe's tooling
 

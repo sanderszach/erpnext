@@ -4,7 +4,8 @@
   "description": "Monorepo for ERPNext and related applications",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/chat-ui",
+    "apps/agent",
     "libs/*"
   ],
   "scripts": {

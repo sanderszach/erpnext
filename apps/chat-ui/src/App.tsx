@@ -1,14 +1,15 @@
 import React from 'react';
-import Chat from './components/Chat';
+import { ChakraProvider, defaultSystem } from '@chakra-ui/react';
+import { ChatContent } from './components/Chat';
 
 const App = () => {
   return (
-    <div>
-      <h1>Chat UI Host</h1>
-      <Chat />
-    </div>
+    <ChakraProvider value={defaultSystem}>
+      <div style={{ padding: '20px' }}>
+        <ChatContent />
+      </div>
+    </ChakraProvider>
   );
 };
 
 export default App;
-

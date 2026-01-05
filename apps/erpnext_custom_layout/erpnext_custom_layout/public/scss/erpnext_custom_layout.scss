@@ -457,51 +457,6 @@
         border-top: 1px solid var(--nexerp-border) !important;
         background: var(--nexerp-bg) !important;
         margin-top: auto !important;
-        position: relative !important;
-        z-index: 10 !important;
-            margin-bottom: 20px;
-            p { margin-bottom: 8px; }
-            p:last-child { margin-bottom: 0; }
-            ul, ol { margin-bottom: 8px; padding-left: 20px; }
-            li { margin-bottom: 4px; }
-            code {
-                background: rgba(255,255,255,0.1);
-                padding: 2px 4px;
-                border-radius: 4px;
-                font-family: monospace;
-                color: var(--nexerp-accent-gold);
-            }
-            pre {
-                background: rgba(0,0,0,0.3);
-                padding: 12px;
-                border-radius: 8px;
-                overflow-x: auto;
-                margin-bottom: 12px;
-                border: 1px solid var(--nexerp-border);
-                code { background: transparent; padding: 0; color: inherit; }
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 12px;
-                th, td {
-                    border: 1px solid var(--nexerp-border);
-                    padding: 8px 12px;
-                    text-align: left;
-                }
-                th { background: var(--nexerp-hover); font-weight: 700; }
-            }
-        }
-    }
-
-    .chat-input-group {
-        flex-shrink: 0 !important;
-        display: flex !important;
-        gap: 12px !important;
-        padding: 15px 0 0 0 !important;
-        border-top: 1px solid var(--nexerp-border) !important;
-        background: var(--nexerp-bg) !important;
-        margin-top: auto !important;
         
         .chat-input {
             background: var(--nexerp-hover) !important;
